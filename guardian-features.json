@@ -1,0 +1,24 @@
+{
+  "version": 1,
+  "purpose": "Guardian UI exposure only. No permission grants or external adapter activation.",
+  "flags": {
+    "guardian_ai_health_check": false,
+    "guardian_insurance": true,
+    "guardian_claim": true,
+    "guardian_reward": true,
+    "guardian_offerwall": false,
+    "guardian_pet_taxi": true,
+    "guardian_pet_hotel": true,
+    "guardian_grooming": true,
+    "guardian_funeral": true,
+    "guardian_marketplace": true
+  },
+  "adapters": {
+    "ai": "UNCONNECTED",
+    "ga": "UNCONNECTED",
+    "insurer": "UNCONNECTED",
+    "claim": "UNCONNECTED",
+    "offerwall": "UNCONNECTED",
+    "life_services": "UNCONNECTED"
+  }
+}
