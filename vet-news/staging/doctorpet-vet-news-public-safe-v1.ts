@@ -15,7 +15,8 @@ const ORIGINS = new Set([
   "https://doctorpetadmin7-maker.github.io",
   "https://doctorpet-032-review.suppoess77.chatgpt.site",
 ]);
-const metadataReady = () => Deno.env.get("DPN_NEWS_RSS_METADATA_PUBLIC_OK") === "true";
+const COMPILE_TIME_RELEASE_ENABLED = false; // DEV installation holds all news rows closed until a separate release review.
+const metadataReady = () => COMPILE_TIME_RELEASE_ENABLED && Deno.env.get("DPN_NEWS_RSS_METADATA_PUBLIC_OK") === "true";
 
 function responseHeaders(origin: string | null) {
   const headers: Record<string,string> = {
