@@ -8,6 +8,7 @@ on:
       - .github/workflows/doctorpet-vet-news-r46-http.yml
       - vet-news/staging/doctorpet-vet-news-r47-live-ui-contract.cjs
       - vet-news/staging/r4_5-rights-safe-ui.html
+      - vet-news/staging/doctorpet-vet-news-r48-live-browser.py
   pull_request:
     branches:
       - main
@@ -15,13 +16,14 @@ on:
       - .github/workflows/doctorpet-vet-news-r46-http.yml
       - vet-news/staging/doctorpet-vet-news-r47-live-ui-contract.cjs
       - vet-news/staging/r4_5-rights-safe-ui.html
+      - vet-news/staging/doctorpet-vet-news-r48-live-browser.py
   workflow_dispatch:
 permissions:
   contents: read
 jobs:
   dev-read-only-smoke:
     runs-on: ubuntu-latest
-    timeout-minutes: 3
+    timeout-minutes: 6
     steps:
       - name: Read isolated review branch
         uses: actions/checkout@v4
@@ -71,3 +73,11 @@ jobs:
         run: |
           node vet-news/staging/doctorpet-vet-news-r47-live-ui-contract.cjs --fixture
           node vet-news/staging/doctorpet-vet-news-r47-live-ui-contract.cjs
+      - name: R4.8 full-browser test using LIVE DEV safe metadata (no publisher requests)
+        shell: bash
+        run: |
+          python3 -m pip install --disable-pip-version-check playwright==1.55.0
+          if ! command -v google-chrome >/dev/null 2>&1 && ! command -v chromium >/dev/null 2>&1; then
+            python3 -m playwright install chromium
+          fi
+          python3 vet-news/staging/doctorpet-vet-news-r48-live-browser.py
