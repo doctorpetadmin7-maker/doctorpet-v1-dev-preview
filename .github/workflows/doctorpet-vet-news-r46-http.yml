@@ -13,6 +13,7 @@ on:
       - vet-news/staging/doctorpet-vet-news-r51-surface-gate.py
       - vet-news/staging/r54-media-contract.test.cjs
       - vet-news/staging/r54-licensed-media-ready-ui.html
+      - vet-news/staging/r55-licensed-media-attributed-ui.html
   pull_request:
     branches:
       - main
@@ -25,6 +26,7 @@ on:
       - vet-news/staging/doctorpet-vet-news-r51-surface-gate.py
       - vet-news/staging/r54-media-contract.test.cjs
       - vet-news/staging/r54-licensed-media-ready-ui.html
+      - vet-news/staging/r55-licensed-media-attributed-ui.html
   workflow_dispatch:
 permissions:
   contents: read
@@ -102,3 +104,8 @@ jobs:
         run: |
           node vet-news/staging/r54-media-contract.test.cjs
           DOCTORPET_NEWS_UI_FILE=r54-licensed-media-ready-ui.html python3 vet-news/staging/doctorpet-vet-news-r49-browser-direct-cors.py
+      - name: R5.5 attribution and 100-card contract with live DEV browser (no publisher requests)
+        shell: bash
+        run: |
+          DOCTORPET_NEWS_UI_FILE=r55-licensed-media-attributed-ui.html node vet-news/staging/r54-media-contract.test.cjs
+          DOCTORPET_NEWS_UI_FILE=r55-licensed-media-attributed-ui.html python3 vet-news/staging/doctorpet-vet-news-r49-browser-direct-cors.py
