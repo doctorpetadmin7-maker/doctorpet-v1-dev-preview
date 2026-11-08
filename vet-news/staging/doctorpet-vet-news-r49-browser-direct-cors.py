@@ -13,6 +13,7 @@ from playwright.sync_api import sync_playwright
 
 DEV_API="https://mabvxdcpmfdzrqlgkxqn.supabase.co/functions/v1/doctorpet-vet-news-release-data"
 SITE_URL="https://doctorpetadmin7-maker.github.io/doctorpet-v1-dev-preview/vet-news/"
+REVIEW032_URL="https://doctorpet-032-review.suppoess77.chatgpt.site/vet-news/"
 DENIED_URL="https://unapproved.invalid/vet-news/"
 R4_HTML=Path(__file__).with_name("r4_5-rights-safe-ui.html").read_text(encoding="utf-8")
 assert f"const API='{DEV_API}';" in R4_HTML
@@ -45,8 +46,9 @@ def test_view(browser, width, url, expect_allowed):
         page.locator("#apiStatus[data-kind='ready']").wait_for(state="visible",timeout=25000)
         assert len(api_req)==1,("API request count",width,len(api_req))
         assert len(api_res)==1 and api_res[0].status==200,("API status",width,[r.status for r in api_res])
-        assert api_req[0].headers.get("origin")=="https://doctorpetadmin7-maker.github.io", "Unexpected origin request header"
-        assert api_res[0].headers.get("access-control-allow-origin")=="https://doctorpetadmin7-maker.github.io", "CORS denied"
+        expected_origin=urlsplit(url).scheme+"://"+urlsplit(url).hostname
+        assert api_req[0].headers.get("origin")==expected_origin, "Unexpected origin request header"
+        assert api_res[0].headers.get("access-control-allow-origin")==expected_origin, "CORS denied"
         assert "no-store" in api_res[0].headers.get("cache-control",""),"Cache policy"
         assert page.locator(".news-card").count()==64,(width,"rows",page.locator(".news-card").count())
         assert page.locator(".thumb[data-photo='withheld']").count()==64, "Photos were not withheld"
@@ -72,7 +74,7 @@ def test_view(browser, width, url, expect_allowed):
         assert page.locator(".news-card").count()==64, "Clear search failed"
         assert page.locator("#searchInput").input_value()==""
         assert page.locator("#apiStatus").get_attribute("data-kind")=="ready"
-        print(f"R4.9 PASS {width}px REAL-BROWSER CORS: origin=GitHub Pages, API HTTP 200, metadata=64, search, sources, links, photos=0, no overflow")
+        print(f"R5.3 PASS {width}px REAL-BROWSER CORS: origin={expected_origin}, API HTTP 200, metadata=64, search, sources, links, photos=0, no overflow")
     else:
         page.locator("#apiStatus[data-kind='error']").wait_for(state="visible",timeout=25000)
         assert len(api_req)==1,("Denied-origin browser API request missing",len(api_req))
@@ -96,6 +98,7 @@ with sync_playwright() as pw:
     browser=pw.chromium.launch(**browser_args)
     for w in (1440,390,360,320):
         test_view(browser,w,SITE_URL,True)
+    test_view(browser,390,REVIEW032_URL,True)
     test_view(browser,390,DENIED_URL,False)
     browser.close()
-print("R4.9 FINAL PASS: REAL Chromium browser requests to DEV API under simulated GitHub Pages document origin; 4 approved viewports + denied origin, NO public deployment.")
+print("R5.3 FINAL PASS: REAL Chromium calls to DEV API under GitHub Pages (4 sizes), 032 review (390px), and denied Origin, NO public deployment.")
