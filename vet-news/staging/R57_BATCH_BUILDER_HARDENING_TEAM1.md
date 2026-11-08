@@ -8,7 +8,7 @@
 - 실제 DEV RSS 메타데이터 **64건**을 브라우저가 조회한 뒤, **자체 합성 PNG 1장만** 동일 출처에서 시험 로딩했습니다. HTTP 200 → 사진 실제 디코딩·출처 표기 PASS; HTTP 404 → 실패 대체 표시·거짓 출처 숨김 PASS. 실제 기사 사진 게시 **0장**.
 
 ## R5.7 — 로컬 일괄 등록기 안전성 보완 완료
-- 패키지: `DOCTORPET_VET_NEWS_R57_MEDIA_BATCH_TOOL_20261109.zip` — 3번 대화의 신규 파일 첨부. 이 PR 브랜치에 자동 업로드된 코드는 **아닙니다**. 1번은 해당 ZIP을 별도로 첨부받아 사용해야 합니다.
+- 패키지: `DOCTORPET_VET_NEWS_R57_MEDIA_BATCH_TOOL_20261109.zip` — **대표님 개인 Library에 등록**: https://chatgpt.com/library?file_id=libfile_0090f14818c081919dc204b6827a7eba&account_id=personal . 1번 전략실은 이 링크에서 정확한 ZIP을 직접 인수하면 됩니다. GitHub 코드 브랜치에는 이 ZIP의 Python 파일이 업로드되지 않았으니 GitHub CI가 배치 도구 자체를 실행한 것으로 혼동하지 마십시오. 검증 SHA256: `eb0c7fe4cf4a78425715ae54e64ce7f60b794edb68ce52def9a078680c129a9d`.
 - **API 스냅샷 권리 계약 점검 추가:** v2/pageSize100에 더해 데일리벳·해피펫 공개 보류 상태/0건, 후보 공개 OFF, 사진/소개글 비공개 상태 및 private 필드 무노출, ID/URL 중복 방지. 정상 형식이 아닌 응답에서 사진·소개글 후보 생성 금지.
 - **사진 파일 검사 강화:** PNG 청크/CRC/IHDR/IDAT/IEND, JPEG SOI/EOI, WebP RIFF 크기·포맷 검사, 기존 SHA256/파일명/사용권 서류 참조/기한 검사 유지. 브라우저 디코딩은 R5.6과 실기기에서 추가 확인 필요.
 - **복구 및 경합 보호:** 결과 파일을 원자적 `os.link`로 생성. 기존 파일을 덮어쓰거나 동시 2개 작업이 같은 결과물을 덮는 문제 차단.
