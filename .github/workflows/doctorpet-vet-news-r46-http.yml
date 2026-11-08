@@ -6,6 +6,11 @@ on:
       - team3-vet-news-r4-staging-20261108
     paths:
       - .github/workflows/doctorpet-vet-news-r46-http.yml
+  pull_request:
+    branches:
+      - main
+    paths:
+      - .github/workflows/doctorpet-vet-news-r46-http.yml
   workflow_dispatch:
 permissions:
   contents: read
