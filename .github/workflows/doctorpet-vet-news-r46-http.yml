@@ -14,6 +14,7 @@ on:
       - vet-news/staging/r54-media-contract.test.cjs
       - vet-news/staging/r54-licensed-media-ready-ui.html
       - vet-news/staging/r55-licensed-media-attributed-ui.html
+      - vet-news/staging/r56-real-photo-browser-e2e.py
   pull_request:
     branches:
       - main
@@ -27,6 +28,7 @@ on:
       - vet-news/staging/r54-media-contract.test.cjs
       - vet-news/staging/r54-licensed-media-ready-ui.html
       - vet-news/staging/r55-licensed-media-attributed-ui.html
+      - vet-news/staging/r56-real-photo-browser-e2e.py
   workflow_dispatch:
 permissions:
   contents: read
@@ -109,3 +111,7 @@ jobs:
         run: |
           DOCTORPET_NEWS_UI_FILE=r55-licensed-media-attributed-ui.html node vet-news/staging/r54-media-contract.test.cjs
           DOCTORPET_NEWS_UI_FILE=r55-licensed-media-attributed-ui.html python3 vet-news/staging/doctorpet-vet-news-r49-browser-direct-cors.py
+      - name: R5.6 decoded photo, visible credit and 404 fallback on actual DEV metadata
+        shell: bash
+        run: |
+          python3 vet-news/staging/r56-real-photo-browser-e2e.py
