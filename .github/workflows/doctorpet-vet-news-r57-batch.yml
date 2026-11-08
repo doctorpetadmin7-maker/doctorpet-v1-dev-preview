@@ -1,0 +1,47 @@
+# Stage-only QA for the R5.7 offline batch tool; NEVER deploy or contact publishers.
+name: DoctorPet Vet News R5.7 Offline Batch Contract
+on:
+  push:
+    branches:
+      - team3-vet-news-r4-staging-20261108
+    paths:
+      - .github/workflows/doctorpet-vet-news-r57-batch.yml
+      - vet-news/staging/r57-batch/**
+  pull_request:
+    branches:
+      - main
+    paths:
+      - .github/workflows/doctorpet-vet-news-r57-batch.yml
+      - vet-news/staging/r57-batch/**
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  offline-review-only:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Checkout isolated draft branch
+        uses: actions/checkout@v4
+      - name: Verify zero asset entries in intake template
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import csv,pathlib
+          p=pathlib.Path("vet-news/staging/r57-batch/doctorpet_vet_news_r55_approved_media_template.csv")
+          with p.open(encoding="utf-8-sig",newline="") as f:
+              reader=csv.DictReader(f)
+              assert reader.fieldnames and len(reader.fieldnames)==12
+              assert list(reader)==[], "Only an empty rights-review template is approved in GitHub"
+          print("R5.7 PASS: empty intake schema, no actual publisher photos or summaries committed")
+          PY
+      - name: Execute original R5.7 Python tests from source
+        shell: bash
+        run: |
+          PYTHONDONTWRITEBYTECODE=1 python3 vet-news/staging/r57-batch/doctorpet_vet_news_r57_batch_media_tests.py
+      - name: Confirm repository has no generated public media files
+        shell: bash
+        run: |
+          test ! -d vet-news/staging/r57-batch/licensed-media
+          test ! -f vet-news/staging/r57-batch/review-output.html
+          echo 'R5.7 PASS: tests generated no public media or deployed page'
