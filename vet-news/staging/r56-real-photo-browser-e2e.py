@@ -3,7 +3,7 @@
 The R5.5 HTML is never deployed. Only a browser document and image are
 intercepted as test fixtures; the browser requests the actual DEV API.
 """
-import json, pathlib, struct, urllib.request, zlib
+import json, pathlib, struct, urllib.request, zlib, shutil
 from playwright.sync_api import sync_playwright
 
 ORIGIN="https://doctorpetadmin7-maker.github.io"
@@ -42,7 +42,10 @@ def photo():
       chunk(b"IEND",b""))
 
 with sync_playwright() as p:
-    browser=p.chromium.launch(headless=True,args=["--no-sandbox","--disable-dev-shm-usage"],channel="chrome")
+    chrome=shutil.which("google-chrome") or shutil.which("chromium") or shutil.which("chromium-browser")
+    opts={"headless":True,"args":["--no-sandbox","--disable-dev-shm-usage"]}
+    if chrome:opts["executable_path"]=chrome
+    browser=p.chromium.launch(**opts)
     for image_status in (200,404):
         context=browser.new_context(viewport={"width":390,"height":850},locale="ko-KR")
         page=context.new_page()
