@@ -75,10 +75,14 @@ def test_view(browser, width, url, expect_allowed):
         print(f"R4.9 PASS {width}px REAL-BROWSER CORS: origin=GitHub Pages, API HTTP 200, metadata=64, search, sources, links, photos=0, no overflow")
     else:
         page.locator("#apiStatus[data-kind='error']").wait_for(state="visible",timeout=25000)
-        assert len(api_req)==1 and len(api_res)==1, "Denied-origin request missing"
-        assert api_res[0].status==403,("Expected real HTTP 403",api_res[0].status)
+        assert len(api_req)==1,("Denied-origin browser API request missing",len(api_req))
+        # Chromium can intentionally hide 403 details from page response listeners when
+        # the response itself has no ACAO header. Verify HTTP 403 independently.
+        assert all(resp.status==403 for resp in api_res),("Unexpected denied response", [resp.status for resp in api_res])
+        deny_status=ctx.request.get(DEV_API,headers={"Origin":"https://unapproved.invalid"},timeout=15000).status
+        assert deny_status==403,("Denied Origin should receive HTTP 403",deny_status)
         assert page.locator(".news-card").count()==0, "Fail-closed browser leaked rows"
-        print("R4.9 PASS denied browser origin: real API HTTP 403, UI fail-closed, rows=0")
+        print("R4.9 PASS denied browser origin: live HTTP 403 cross-checked, UI fail-closed, rows=0")
     assert not unexpected,(width,"Unexpected outbound requests",unexpected)
     assert not browser_errors,(width,"JavaScript errors",browser_errors)
     if expect_allowed:
