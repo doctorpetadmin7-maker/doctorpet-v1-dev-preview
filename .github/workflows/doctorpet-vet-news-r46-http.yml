@@ -6,11 +6,15 @@ on:
       - team3-vet-news-r4-staging-20261108
     paths:
       - .github/workflows/doctorpet-vet-news-r46-http.yml
+      - vet-news/staging/doctorpet-vet-news-r47-live-ui-contract.cjs
+      - vet-news/staging/r4_5-rights-safe-ui.html
   pull_request:
     branches:
       - main
     paths:
       - .github/workflows/doctorpet-vet-news-r46-http.yml
+      - vet-news/staging/doctorpet-vet-news-r47-live-ui-contract.cjs
+      - vet-news/staging/r4_5-rights-safe-ui.html
   workflow_dispatch:
 permissions:
   contents: read
@@ -19,6 +23,8 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 3
     steps:
+      - name: Read isolated review branch
+        uses: actions/checkout@v4
       - name: Check approved origin, v6 rights-safe response, and blocked origin
         shell: bash
         run: |
@@ -60,3 +66,8 @@ jobs:
           assert get(method='POST')[0]==405, 'POST should return 405'
           print('PASS: live DEV HTTP/CORS/rights gate; metadata rows:',len(rows),'private rows: 0, photos: 0')
           PY
+      - name: Verify exact R4.5 UI parser against the LIVE DEV API
+        shell: bash
+        run: |
+          node vet-news/staging/doctorpet-vet-news-r47-live-ui-contract.cjs --fixture
+          node vet-news/staging/doctorpet-vet-news-r47-live-ui-contract.cjs
