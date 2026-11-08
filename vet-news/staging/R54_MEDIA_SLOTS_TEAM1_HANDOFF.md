@@ -29,4 +29,4 @@
 
 ## 검수
 - `vet-news/staging/r54-media-contract.test.cjs`: 소스 JS 문법 검사, 가상 사진·소개글 100쌍 표시, 13개 비승인·교차 기사 연결 거부, 실연결 0건 확인.
-- GitHub Actions 워크플로 `.github/workflows/doctorpet-vet-news-r46-http.yml`: 실제 DEV API 64건 + R5.4 동일 출처 브라우저 CORS 검수 포함. **워크플로 실제 결과는 실행 완료 후 확정.**
+- GitHub Actions 워크플로 `.github/workflows/doctorpet-vet-news-r46-http.yml`: 실제 DEV API 64건 + R5.4 동일 출처 브라우저 CORS 검수 포함. **run 42505633971 / job 128807530613 completed SUCCESS**. 로그: `PASS R5.4 HTML syntax, 100/100 licensed media & two-line summaries in SIMULATION; 13 rejection cases; live licensed assets 0`. 브라우저 직접 GET/CORS, 032 출처, 비허용 출처 및 기존 보안 회귀도 동시 PASS.
