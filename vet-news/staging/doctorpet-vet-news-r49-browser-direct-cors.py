@@ -9,13 +9,14 @@ Read-only: no collection, claims, DB writes, or publisher requests.
 from pathlib import Path
 from urllib.parse import urlsplit
 import shutil
+import os
 from playwright.sync_api import sync_playwright
 
 DEV_API="https://mabvxdcpmfdzrqlgkxqn.supabase.co/functions/v1/doctorpet-vet-news-release-data"
 SITE_URL="https://doctorpetadmin7-maker.github.io/doctorpet-v1-dev-preview/vet-news/"
 REVIEW032_URL="https://doctorpet-032-review.suppoess77.chatgpt.site/vet-news/"
 DENIED_URL="https://unapproved.invalid/vet-news/"
-R4_HTML=Path(__file__).with_name("r4_5-rights-safe-ui.html").read_text(encoding="utf-8")
+R4_HTML=Path(__file__).with_name(os.environ.get("DOCTORPET_NEWS_UI_FILE","r4_5-rights-safe-ui.html")).read_text(encoding="utf-8")
 assert f"const API='{DEV_API}';" in R4_HTML
 browser_errors=[]
 def test_view(browser, width, url, expect_allowed):
