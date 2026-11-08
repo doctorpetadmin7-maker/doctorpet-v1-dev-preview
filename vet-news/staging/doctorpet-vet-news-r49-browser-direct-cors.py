@@ -42,7 +42,7 @@ def test_view(browser, width, url, expect_allowed):
     page.goto(url,wait_until="domcontentloaded",timeout=25000)
     assert page.evaluate("location.origin")==urlsplit(url).scheme+"://"+urlsplit(url).hostname, "wrong browser origin"
     if expect_allowed:
-        page.wait_for_function("document.querySelector('#apiStatus')?.dataset.kind==='ready'",timeout=25000)
+        page.locator("#apiStatus[data-kind='ready']").wait_for(state="visible",timeout=25000)
         assert len(api_req)==1,("API request count",width,len(api_req))
         assert len(api_res)==1 and api_res[0].status==200,("API status",width,[r.status for r in api_res])
         assert api_req[0].headers.get("origin")=="https://doctorpetadmin7-maker.github.io", "Unexpected origin request header"
@@ -74,7 +74,7 @@ def test_view(browser, width, url, expect_allowed):
         assert page.locator("#apiStatus").get_attribute("data-kind")=="ready"
         print(f"R4.9 PASS {width}px REAL-BROWSER CORS: origin=GitHub Pages, API HTTP 200, metadata=64, search, sources, links, photos=0, no overflow")
     else:
-        page.wait_for_function("document.querySelector('#apiStatus')?.dataset.kind==='error'",timeout=25000)
+        page.locator("#apiStatus[data-kind='error']").wait_for(state="visible",timeout=25000)
         assert len(api_req)==1 and len(api_res)==1, "Denied-origin request missing"
         assert api_res[0].status==403,("Expected real HTTP 403",api_res[0].status)
         assert page.locator(".news-card").count()==0, "Fail-closed browser leaked rows"
