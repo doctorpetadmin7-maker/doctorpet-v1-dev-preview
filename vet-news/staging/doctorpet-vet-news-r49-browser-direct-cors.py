@@ -8,6 +8,7 @@ Read-only: no collection, claims, DB writes, or publisher requests.
 """
 from pathlib import Path
 from urllib.parse import urlsplit
+import shutil
 from playwright.sync_api import sync_playwright
 
 DEV_API="https://mabvxdcpmfdzrqlgkxqn.supabase.co/functions/v1/doctorpet-vet-news-release-data"
@@ -84,7 +85,11 @@ def test_view(browser, width, url, expect_allowed):
         assert not console_errors,(width,"Browser console error",console_errors)
     ctx.close()
 with sync_playwright() as pw:
-    browser=pw.chromium.launch(headless=True,args=["--no-sandbox","--disable-dev-shm-usage"])
+    browser_args={"headless":True,"args":["--no-sandbox","--disable-dev-shm-usage"]}
+    system_chrome=next((shutil.which(name) for name in ("google-chrome","chromium","chromium-browser") if shutil.which(name)),None)
+    if system_chrome:
+        browser_args["executable_path"]=system_chrome
+    browser=pw.chromium.launch(**browser_args)
     for w in (1440,390,360,320):
         test_view(browser,w,SITE_URL,True)
     test_view(browser,390,DENIED_URL,False)
