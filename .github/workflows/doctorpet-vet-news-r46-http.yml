@@ -1,0 +1,57 @@
+# Isolated QA only: no deploys, secrets, publisher requests, or database mutations.
+name: DoctorPet Vet News R4.6 DEV HTTP smoke
+on:
+  push:
+    branches:
+      - team3-vet-news-r4-staging-20261108
+    paths:
+      - .github/workflows/doctorpet-vet-news-r46-http.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  dev-read-only-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Check approved origin, v6 rights-safe response, and blocked origin
+        shell: bash
+        run: |
+          python - <<'PY'
+          import json, urllib.request, urllib.error, urllib.parse
+          BASE='https://mabvxdcpmfdzrqlgkxqn.supabase.co/functions/v1/doctorpet-vet-news-release-data'
+          ORIGIN='https://doctorpetadmin7-maker.github.io'
+          def get(method='GET', origin=ORIGIN):
+              req=urllib.request.Request(BASE,method=method,headers={'Origin':origin})
+              try:
+                  with urllib.request.urlopen(req,timeout=12) as r:
+                      return r.status,dict(r.headers),r.read(1500000)
+              except urllib.error.HTTPError as e:
+                  return e.code,dict(e.headers),e.read(1024)
+          status,h,raw=get()
+          assert status==200, f'Unexpected HTTP status: {status}'
+          assert h.get('Access-Control-Allow-Origin')==ORIGIN, 'CORS allowlist issue'
+          assert 'no-store' in h.get('Cache-Control',''), 'Cache policy issue'
+          d=json.loads(raw)
+          assert d.get('version')==2 and d.get('pageSize')==100, 'Legacy response contract changed'
+          g=d.get('groups',{}); st=d.get('states',{})
+          assert set(g)=={'FEED_DAILYGAEWON','REF_DAILYVET','REF_HAPPYPET'}, 'Unexpected source'
+          assert g['REF_DAILYVET']==[] and g['REF_HAPPYPET']==[], 'Private trial rows leaked'
+          for name in ('REF_DAILYVET','REF_HAPPYPET'):
+              assert st[name].get('publicationStatus')=='WITHHELD_RIGHTS_PENDING', 'Missing privacy hold'
+              assert st[name].get('actualCount')==0, 'Private counts leaked'
+          rows=g['FEED_DAILYGAEWON']
+          assert isinstance(rows,list) and len(rows)<=2000, 'Invalid list'
+          for r in rows:
+              assert r.get('sourceId')=='FEED_DAILYGAEWON' and r.get('actualStored') is True, 'Invalid row'
+              assert r.get('image') is None and r.get('excerpt') is None, 'Rights-limited content leaked'
+              assert r.get('imageState')=='WITHHELD_RIGHTS_PENDING' and r.get('excerptState')=='WITHHELD_RIGHTS_PENDING', 'Right hold missing'
+              assert isinstance(r.get('title'),str) and r['title'].strip(), 'Blank title'
+              u=urllib.parse.urlsplit(r.get('url',''))
+              assert u.scheme=='https' and (u.hostname=='dailygaewon.com' or (u.hostname or '').endswith('.dailygaewon.com')), 'Unapproved URL'
+          assert d.get('candidates',{}).get('visibleInRelease') is False, 'Candidate gate bypass'
+          assert get(origin='https://unapproved.invalid')[0]==403, 'Denied Origin should return 403'
+          assert get(method='OPTIONS')[0]==204, 'OPTIONS should return 204'
+          assert get(method='POST')[0]==405, 'POST should return 405'
+          print('PASS: live DEV HTTP/CORS/rights gate; metadata rows:',len(rows),'private rows: 0, photos: 0')
+          PY
