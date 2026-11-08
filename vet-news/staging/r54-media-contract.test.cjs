@@ -1,6 +1,6 @@
 'use strict';
 const assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm'),path=require('node:path');
-const html=fs.readFileSync(path.join(__dirname,'r54-licensed-media-ready-ui.html'),'utf8');
+const html=fs.readFileSync(path.join(__dirname,process.env.DOCTORPET_NEWS_UI_FILE||'r54-licensed-media-ready-ui.html'),'utf8');
 const m=html.match(/<script>([\s\S]*?)<\/script>/);
 assert(m,'inline script missing');
 new vm.Script(m[1],{filename:'r54-page.js'});
@@ -43,6 +43,11 @@ for(let i=0;i<100;i++){
  assert(markup.includes('class="excerpt "'),i);
  assert(markup.includes('data-photo="pending"'),i);
  assert(markup.includes('referrerpolicy="no-referrer"'),i);
+ if(process.env.DOCTORPET_NEWS_UI_FILE==='r55-licensed-media-attributed-ui.html'){
+  assert(markup.includes('class="media-attribution"'),i);
+  assert(markup.includes('© DoctorPet original test asset'),i);
+  assert.equal(m.attribution,'© DoctorPet original test asset');
+ }
  photos++;summaries++;
 }
 assert.equal(photos,100);assert.equal(summaries,100);
