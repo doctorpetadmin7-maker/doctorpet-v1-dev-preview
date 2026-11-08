@@ -31,7 +31,7 @@ const sandbox={
 function adapter(map){
  const source=helper.replace('Object.freeze({})','Object.freeze('+JSON.stringify(map)+')');
  assert.notEqual(source,helper,'test manifest injection failed');
- return vm.runInNewContext(source+'\n'+card+'\n({mediaFor,card})',sandbox,{timeout:2500});
+ return vm.runInNewContext(source+'\n'+card+'\n({mediaFor,card})',{...sandbox},{timeout:2500});
 }
 const full=adapter(manifest);
 let photos=0,summaries=0;
@@ -46,7 +46,7 @@ for(let i=0;i<100;i++){
  photos++;summaries++;
 }
 assert.equal(photos,100);assert.equal(summaries,100);
-const absent=vm.runInNewContext(helper+'\n'+card+'\n({mediaFor,card})',sandbox,{timeout:2500});
+const absent=vm.runInNewContext(helper+'\n'+card+'\n({mediaFor,card})',{...sandbox},{timeout:2500});
 assert.equal(absent.mediaFor(row(1)).imageUrl,null);
 assert.equal(absent.mediaFor(row(1)).summary,null);
 assert(!absent.card(row(1),0).includes('<img '));
