@@ -11,6 +11,8 @@ on:
       - vet-news/staging/doctorpet-vet-news-r48-live-browser.py
       - vet-news/staging/doctorpet-vet-news-r49-browser-direct-cors.py
       - vet-news/staging/doctorpet-vet-news-r51-surface-gate.py
+      - vet-news/staging/r54-media-contract.test.cjs
+      - vet-news/staging/r54-licensed-media-ready-ui.html
   pull_request:
     branches:
       - main
@@ -21,6 +23,8 @@ on:
       - vet-news/staging/doctorpet-vet-news-r48-live-browser.py
       - vet-news/staging/doctorpet-vet-news-r49-browser-direct-cors.py
       - vet-news/staging/doctorpet-vet-news-r51-surface-gate.py
+      - vet-news/staging/r54-media-contract.test.cjs
+      - vet-news/staging/r54-licensed-media-ready-ui.html
   workflow_dispatch:
 permissions:
   contents: read
@@ -93,3 +97,8 @@ jobs:
         shell: bash
         run: |
           python3 vet-news/staging/doctorpet-vet-news-r51-surface-gate.py
+      - name: R5.4 media readiness contract 100-card fixture and live DEV browser
+        shell: bash
+        run: |
+          node vet-news/staging/r54-media-contract.test.cjs
+          DOCTORPET_NEWS_UI_FILE=r54-licensed-media-ready-ui.html python3 vet-news/staging/doctorpet-vet-news-r49-browser-direct-cors.py
