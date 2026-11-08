@@ -10,6 +10,7 @@ on:
       - vet-news/staging/r4_5-rights-safe-ui.html
       - vet-news/staging/doctorpet-vet-news-r48-live-browser.py
       - vet-news/staging/doctorpet-vet-news-r49-browser-direct-cors.py
+      - vet-news/staging/doctorpet-vet-news-r51-surface-gate.py
   pull_request:
     branches:
       - main
@@ -19,6 +20,7 @@ on:
       - vet-news/staging/r4_5-rights-safe-ui.html
       - vet-news/staging/doctorpet-vet-news-r48-live-browser.py
       - vet-news/staging/doctorpet-vet-news-r49-browser-direct-cors.py
+      - vet-news/staging/doctorpet-vet-news-r51-surface-gate.py
   workflow_dispatch:
 permissions:
   contents: read
@@ -87,3 +89,7 @@ jobs:
         shell: bash
         run: |
           python3 vet-news/staging/doctorpet-vet-news-r49-browser-direct-cors.py
+      - name: R5.1 disabled news surfaces and nonpublic authority read-only regression
+        shell: bash
+        run: |
+          python3 vet-news/staging/doctorpet-vet-news-r51-surface-gate.py
