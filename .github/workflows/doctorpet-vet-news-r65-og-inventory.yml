@@ -12,21 +12,21 @@ permissions:
 jobs:
   og-photo-discovery:
     runs-on: ubuntu-latest
-    timeout-minutes: 4
+    timeout-minutes: 7
     steps:
       - name: Read review-only script
         uses: actions/checkout@v4
       - name: Verify Python script syntax
         run: python3 -m py_compile vet-news/staging/r65_dailygaewon_photo_inventory.py
-      - name: Pilot 3 previously approved DEV article URLs with robots check
+      - name: Scan all 64 existing DEV article URLs with robots and sequential rate limit
         run: |
-          python3 vet-news/staging/r65_dailygaewon_photo_inventory.py --limit 3 --output r65-inventory-pilot
+          python3 vet-news/staging/r65_dailygaewon_photo_inventory.py --limit 64 --output r65-inventory-64
       - name: Upload metadata only, no photo files
         uses: actions/upload-artifact@v4
         with:
-          name: r65-pilot-photo-url-metadata-only
+          name: r65-full64-photo-url-metadata-only
           path: |
-            r65-inventory-pilot.csv
-            r65-inventory-pilot.json
+            r65-inventory-64.csv
+            r65-inventory-64.json
           retention-days: 1
           if-no-files-found: error
