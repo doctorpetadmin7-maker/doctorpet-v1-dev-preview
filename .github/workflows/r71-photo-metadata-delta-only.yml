@@ -1,0 +1,26 @@
+# R7.1 standalone new-only QA; does not run old PR test suites or contact publishers.
+name: R7.1 one-article photo metadata change-gate
+on:
+  push:
+    branches: [team3-r71-photo-delta-qa-20261109]
+    paths:
+      - .github/workflows/r71-photo-metadata-delta-only.yml
+      - vet-news/staging/r71_photo_metadata_delta.py
+      - vet-news/staging/test_r71_photo_metadata_delta.py
+permissions:
+  contents: read
+jobs:
+  image-delta-only:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Checkout code review branch
+        uses: actions/checkout@v4
+      - name: Test only new R7.1 scenarios without external requests
+        shell: bash
+        run: |
+          python3 -m unittest discover -s vet-news/staging -p 'test_r71_photo_metadata_delta.py' -v
+      - name: Ensure no files changed
+        run: |
+          git diff --exit-code
+          echo "R7.1 validation only; source RSS, database, media, live site, production unchanged."
