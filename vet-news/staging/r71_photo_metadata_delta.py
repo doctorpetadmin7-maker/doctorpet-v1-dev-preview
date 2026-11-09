@@ -57,7 +57,10 @@ def _allowed_image(article_url: str, article_no: str, candidate: str) -> str | N
         return None
     if u.scheme != "https" or u.hostname != "www.dailygaewon.com":
         return None
-    if u.username or u.password or u.port not in (None, 443) or u.query or u.fragment:
+    try:
+        if u.username or u.password or u.port not in (None, 443) or u.query or u.fragment:
+            return None
+    except ValueError:
         return None
     path_pattern = (
         r"/news/thumbnail/[0-9]{6}/" + re.escape(article_no)
