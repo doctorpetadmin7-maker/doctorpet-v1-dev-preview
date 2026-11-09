@@ -1,0 +1,57 @@
+# One-off repair feasibility of a newly confirmed 404 photo, only article 18647.
+name: R7.0D one article 18647 current OG image recovery
+on:
+  push:
+    branches: [team3-r69-image-render-qa-20261109]
+    paths: [.github/workflows/r70d-one-article-current-og.yml]
+permissions:
+  contents: read
+jobs:
+  exact-one-article:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Read only current OG image URL on article 18647
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from html.parser import HTMLParser
+          import urllib.request,urllib.parse,urllib.error,json,re
+          article="https://www.dailygaewon.com/news/articleView.html?idxno=18647"
+          previous="https://www.dailygaewon.com/news/thumbnail/202611/18647_26833_2154_v150.jpg"
+          ua="DoctorPet-private-article-image-inventory/1.0"
+          class ImageMetadata(HTMLParser):
+            def __init__(self):
+              super().__init__(convert_charrefs=True);self.items=[]
+            def handle_starttag(self,tag,attrs):
+              if tag!="meta":return
+              d=dict(attrs)
+              if d.get("property","").lower() in ("og:image","og:image:url"):
+                if d.get("content"):self.items.append(d["content"])
+          req=urllib.request.Request(article,headers={"User-Agent":ua},method="GET")
+          with urllib.request.urlopen(req,timeout=18) as r:
+            body=r.read(1600001)
+            ct=r.headers.get("Content-Type","")
+            code=r.status
+          assert code==200 and "html" in ct.lower() and len(body)<=1600000, "ARTICLE_UNAVAILABLE"
+          parser=ImageMetadata();parser.feed(body.decode("utf-8","strict"))
+          imgs=[]
+          for im in parser.items:
+            full=urllib.parse.urljoin(article,im)
+            x=urllib.parse.urlparse(full)
+            if x.scheme=="https" and x.hostname=="www.dailygaewon.com" and x.path.startswith("/news/thumbnail/"):
+              imgs.append(full)
+          print("R70D_ARTICLE",json.dumps({"article":"18647","http":code,"current_og":imgs,"previous":previous,"og_changed":bool(imgs and imgs[0]!=previous)},ensure_ascii=False),flush=True)
+          if not imgs:
+            print("R70D_RESULT NO_CURRENT_PUBLISHER_IMAGE_URL")
+          elif imgs[0]==previous:
+            print("R70D_RESULT OG_STILL_POINTS_TO_404_IMAGE_USE_FALLBACK")
+          else:
+            # Only one new URL, HEAD only; do not download photograph.
+            try:
+              req=urllib.request.Request(imgs[0],headers={"User-Agent":ua},method="HEAD")
+              with urllib.request.urlopen(req,timeout=18) as r:
+                print("R70D_NEW_IMAGE_HEAD",json.dumps({"http":r.status,"mime":r.headers.get("Content-Type",""),"content_length":r.headers.get("Content-Length","")}),flush=True)
+            except urllib.error.HTTPError as e:
+              print("R70D_NEW_IMAGE_HEAD_ERROR",e.code)
+          PY
