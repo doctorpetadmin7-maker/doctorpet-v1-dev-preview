@@ -136,17 +136,20 @@ function classify(r){
   if(/정책|정부|농림|검역|공고|위원회|협회|대수회|법|규제|공공|동물복지|복지|방역/.test(s))return '정책·공공';
   return '수의계소식';
 }
-function summaryFor(r){
-  const c=classify(r),m=sourceName(r.sourceId);
-  const t={
-    '임상·진료':m+'이 전한 임상·진료 관련 최신 소식입니다. 진료 현장에서 참고할 핵심 내용은 원문에서 확인하세요.',
-    '학술·교육':m+'의 학술·교육 관련 최신 소식입니다. 학회·연구·교육의 주요 내용과 일정은 원문에서 확인하세요.',
-    '산업·제품':m+'의 산업·제품 관련 최신 소식입니다. 서비스·제품·기업 동향의 세부 내용은 원문에서 확인하세요.',
-    '정책·공공':m+'의 정책·공공 관련 최신 소식입니다. 제도·협회·공공 동향의 정확한 내용은 원문에서 확인하세요.',
-    '병원경영':m+'의 병원경영 관련 최신 소식입니다. 병원 운영과 현장 변화의 자세한 내용은 원문에서 확인하세요.',
-    '수의계소식':m+'이 전한 수의계 최신 소식입니다. 기사 핵심 내용과 세부 정보는 원문에서 확인하세요.'
-  };
-  return t[c];
+// R7.6: Metadata-only API has no verified excerpt. A provenance notice is
+// not an article summary; never infer details from a category or the title.
+function summaryFor(){
+  return '기사 소개글은 제공되지 않았습니다. 정확한 내용은 언론사 원문에서 확인하세요.';
+}
+// Display-only repair for one documented UTF-8 corruption in DEV metadata.
+// Require the exact article URL, source, and original damaged bytes.
+function visibleTitle(r){
+  if(r&&r.sourceId==='FEED_DAILYGAEWON'&&
+     r.url==='https://www.dailygaewon.com/news/articleView.html?idxno=18660'&&
+     r.title==='대수회 28대 집행부 ‘동물보��·복지위원회’ 첫 회의'){
+    return '대수회 28대 집행부 ‘동물보호·복지위원회’ 첫 회의';
+  }
+  return r?.title||'제목 확인 중';
 }
 function statusInfo(s){
   if(!s)return['warn','상태 미확인'];
@@ -191,7 +194,7 @@ function renderList(){
     return '<a class="card" href="'+esc(r.url)+'" target="_blank" rel="noopener noreferrer">'+
       '<div class="thumb">'+img+fb+tag+'</div>'+
       '<div class="card-body"><div class="meta"><span class="source">'+esc(m)+'</span><span class="category">'+esc(c)+'</span><span>'+kdate(r.publishedAt)+'</span></div>'+
-      '<h3>'+esc(r.title||'제목 확인 중')+'</h3><p class="summary">'+esc(summaryFor(r))+'</p>'+
+      '<h3>'+esc(visibleTitle(r))+'</h3><p class="summary">'+esc(summaryFor(r))+'</p>'+
       '<div class="card-foot"><span>실제 저장 기사</span><span class="open">원문 보기 ↗</span></div></div></a>';
   }).join('');
   document.getElementById('app').innerHTML=(cards?'<div class="news-grid">'+cards+'</div>':'<div class="empty">이 카테고리에 표시할 기사가 없습니다.</div>')+
