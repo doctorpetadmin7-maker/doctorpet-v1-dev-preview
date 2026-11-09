@@ -1,0 +1,24 @@
+# R7.0C one-off diagnostics for a confirmed unavailable image URL.
+name: R7.0C failed image 18647 HEAD metadata
+on:
+  push:
+    branches: [team3-r69-image-render-qa-20261109]
+    paths: [.github/workflows/r70c-18647-head-diagnosis.yml]
+permissions:
+  contents: read
+jobs:
+  image-18647-only:
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Inspect only publisher photo HEAD response, do not fetch image bytes
+        shell: bash
+        run: |
+          URL="https://www.dailygaewon.com/news/thumbnail/202611/18647_26833_2154_v150.jpg"
+          echo "R70C_CURRENT_HEAD_BEGIN"
+          curl --head --silent --show-error --max-time 20 --max-redirs 0 \
+            -A "Mozilla/5.0 (compatible; DoctorPet-private-image-QA/1.0)" \
+            --write-out "\nR70C_HEAD_HTTP=%{http_code} R70C_IP=%{remote_ip} R70C_TYPE=%{content_type}\n" \
+            "$URL" | grep -Ei '^(HTTP/|content-type:|content-length:|cache-control:|location:|server:|x-|R70C_HEAD_HTTP=)' || true
+          echo "R70C_CURRENT_HEAD_END"
+          echo "No GET, no image bytes, no RSS/article requests, no DB changes"
