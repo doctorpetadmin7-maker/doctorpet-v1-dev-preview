@@ -1,0 +1,64 @@
+name: R6.9 one-off actual photo decode (3 previously known DailyGaewon URLs)
+on:
+  push:
+    branches: [team3-r69-image-render-qa-20261109]
+    paths: [.github/workflows/r69-oneoff-dailygaewon-browser-image.yml]
+permissions:
+  contents: read
+jobs:
+  image-browser-oneoff:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Check image-only browser rendering, not publisher articles or RSS
+        shell: bash
+        run: |
+          python3 -m pip install --disable-pip-version-check playwright==1.55.0
+          if ! command -v google-chrome >/dev/null 2>&1 && ! command -v chromium >/dev/null 2>&1; then
+            python3 -m playwright install chromium
+          fi
+          python3 - <<'PY'
+          import json,shutil
+          from playwright.sync_api import sync_playwright
+          photos=[
+            ("18675","https://www.dailygaewon.com/news/thumbnail/202611/18675_26854_2339_v150.jpg"),
+            ("18674","https://www.dailygaewon.com/news/thumbnail/202611/18674_26852_216_v150.jpg"),
+            ("18673","https://www.dailygaewon.com/news/thumbnail/202611/18673_26851_1938_v150.jpg"),
+          ]
+          urls={url for _,url in photos}
+          with sync_playwright() as pw:
+            path=shutil.which("google-chrome") or shutil.which("chromium") or shutil.which("chromium-browser")
+            launch={"headless":True,"args":["--no-sandbox","--disable-dev-shm-usage"]}
+            if path:launch["executable_path"]=path
+            browser=pw.chromium.launch(**launch)
+            ctx=browser.new_context(viewport={"width":390,"height":844},locale="ko-KR",service_workers="block")
+            page=ctx.new_page()
+            requested=[];responses={};unexpected=[]
+            def intercept(route):
+              request=route.request
+              if request.url in urls and request.method=="GET":
+                requested.append(request.url)
+                route.continue_()
+              else:
+                unexpected.append(request.url)
+                route.abort()
+            page.route("**/*",intercept)
+            page.on("response",lambda res:responses.update({res.url:{"http":res.status,"content_type":res.headers.get("content-type","")}}) if res.url in urls else None)
+            html='<html><head><meta charset="UTF-8"><meta http-equiv="Content-Security-Policy" content="default-src \'none\'; img-src https://www.dailygaewon.com"></head><body>'
+            for no,url in photos:
+              html+=f'<div><img id="i{no}" loading="eager" decoding="async" referrerpolicy="no-referrer" src="{url}" alt="photo proof {no}" width="250" height="180"></div>'
+            page.set_content(html+"</body></html>",wait_until="domcontentloaded",timeout=10000)
+            results=[]
+            for no,url in photos:
+              el=page.locator("#i"+no)
+              try:el.evaluate("(i)=>i.decode()",timeout=20000)
+              except Exception as ex:unexpected.append("decode "+no+": "+type(ex).__name__)
+              state=el.evaluate("(i)=>({complete:i.complete,width:i.naturalWidth,height:i.naturalHeight})")
+              results.append({"article":no,"http":responses.get(url,{}).get("http"),"mime":responses.get(url,{}).get("content_type"),"width":state["width"],"height":state["height"],"complete":state["complete"]})
+            browser.close()
+          print("R6.9 LIVE photo browser check:",json.dumps(results,ensure_ascii=False),flush=True)
+          print("Exact image requests",len(requested),"Unexpected",unexpected,flush=True)
+          assert len(requested)==3 and len(responses)==3 and not unexpected
+          assert all(x["http"]==200 and x["width"]>0 and x["height"]>0 and (x["mime"] or "").startswith("image/") for x in results),"actual image browser display FAIL"
+          print("PASS R6.9 390px actual publisher thumbnail render 3/3; no image files saved; no DailyVet/HappyPet requests",flush=True)
+          PY
