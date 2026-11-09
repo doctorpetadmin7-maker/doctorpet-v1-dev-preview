@@ -1,0 +1,47 @@
+# One-off browser proof of publisher's newly updated 18647 image, not prior 63.
+name: R7.0E repaired 18647 OG image real browser decode
+on:
+  push:
+    branches: [team3-r69-image-render-qa-20261109]
+    paths: [.github/workflows/r70e-oneoff-18647-new-image-decode.yml]
+permissions:
+  contents: read
+jobs:
+  one-new-og-only:
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+    steps:
+      - name: Decode only current new 18647 publisher OG image
+        shell: bash
+        run: |
+          python3 -m pip install --disable-pip-version-check playwright==1.55.0
+          if ! command -v google-chrome >/dev/null 2>&1 && ! command -v chromium >/dev/null 2>&1; then python3 -m playwright install chromium; fi
+          python3 - <<'PY'
+          import json,html,shutil
+          from playwright.sync_api import sync_playwright
+          u="https://www.dailygaewon.com/news/thumbnail/202611/18647_26866_1322_v150.jpg"
+          with sync_playwright() as pw:
+            executable=shutil.which("google-chrome") or shutil.which("chromium")
+            opts={"headless":True,"args":["--no-sandbox","--disable-dev-shm-usage"]}
+            if executable:opts["executable_path"]=executable
+            browser=pw.chromium.launch(**opts)
+            context=browser.new_context(viewport={"width":390,"height":844},service_workers="block")
+            page=context.new_page()
+            seen=[];res=[];fails=[]
+            def route(r):
+              if r.request.url==u and r.request.method=="GET" and r.request.resource_type=="image":
+                seen.append(u);r.continue_()
+              else:
+                fails.append("unexpected "+r.request.url);r.abort()
+            page.route("**/*",route)
+            page.on("response",lambda x:res.append({"http":x.status,"type":x.headers.get("content-type")}) if x.url==u else None)
+            page.on("requestfailed",lambda x:fails.append(x.failure) if x.url==u else None)
+            page.set_content("<!doctype html><meta charset='utf-8'><meta http-equiv='Content-Security-Policy' content=\"default-src 'none'; img-src https://www.dailygaewon.com\"><img id='photo' src='"+html.escape(u,quote=True)+"' decoding='async' referrerpolicy='no-referrer'>",wait_until="domcontentloaded")
+            page.locator("#photo").evaluate("(i)=>i.decode()",timeout=15000)
+            state=page.locator("#photo").evaluate("(i)=>({complete:i.complete,width:i.naturalWidth,height:i.naturalHeight})")
+            print("R70E_RECOVERED",json.dumps({"article":"18647","image":state,"response":res,"failures":fails,"requests":len(seen)}),flush=True)
+            assert len(seen)==1 and len(res)==1 and not fails
+            assert res[0]["http"]==200 and res[0]["type"].startswith("image/") and state["complete"] and state["width"]>0 and state["height"]>0
+            print("PASS R70E 18647 new OG photo decoded. Combined unique 64/64 DailyGaewon images from R69A+R70+R70E; no file storage, no public posting.",flush=True)
+            context.close();browser.close()
+          PY
