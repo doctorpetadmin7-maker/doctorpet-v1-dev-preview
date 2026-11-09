@@ -54,7 +54,7 @@ with sync_playwright() as pw:
         print("R73_BROWSER",i,"/14",no,rec["result"],status,st["width"],st["height"],flush=True)
         if i<len(rows):time.sleep(1.1)
     context.close();browser.close()
-assert len(requests)==14 and len(set(requests))==10 and not unexpected,(len(requests),unexpected[:2])
+assert len(requests)==14 and len(set(requests))==14 and not unexpected,(len(requests),unexpected[:2])
 report={"checked":len(results),"success":sum(x["result"]=="DECODE_OK" for x in results),
         "failure":sum(x["result"]=="DECODE_FAILED" for x in results),
         "results":results,"errors":errors,"unexpectedRequests":unexpected,
