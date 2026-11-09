@@ -1,0 +1,47 @@
+# One-off remaining 61 known publisher thumbnail URLs; no RSS/article fetch, writes or deploy.
+name: R7.0 incremental 61 known photo browser decode
+on:
+  push:
+    branches: [team3-r69-image-render-qa-20261109]
+    paths:
+      - .github/workflows/r70-oneoff-remaining61-photo-decode.yml
+      - vet-news/staging/r70_remaining_photo_decode_qa.py
+permissions:
+  contents: read
+  actions: read
+jobs:
+  remaining-61-only:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - name: Checkout isolated QA branch
+        uses: actions/checkout@v4
+      - name: Reuse R6.5 64-photo metadata artifact, no new article collection
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh run download 42550796628 --repo doctorpetadmin7-maker/doctorpet-v1-dev-preview \
+            --name r65-full64-photo-url-metadata-only --dir r65-metadata
+          python3 - <<'PY'
+          import json
+          x=json.load(open("r65-metadata/r65-inventory-64.json",encoding="utf-8"))
+          assert len(x["data"])==64
+          assert x["summary"]=={"PHOTO_URL_EXTRACTED":64}
+          print("PASS READ EXISTING R6.5 metadata 64 only, 0 article re-fetch")
+          PY
+      - name: Browser decode remaining 61 exact thumbnail URLs
+        shell: bash
+        run: |
+          python3 -m pip install --disable-pip-version-check playwright==1.55.0
+          if ! command -v google-chrome >/dev/null 2>&1 && ! command -v chromium >/dev/null 2>&1; then
+            python3 -m playwright install chromium
+          fi
+          python3 vet-news/staging/r70_remaining_photo_decode_qa.py
+      - name: Upload JSON statuses only, no photos
+        uses: actions/upload-artifact@v4
+        with:
+          name: r70-incremental-61-photo-decode-status-only
+          path: r70-photo-browser-verification.json
+          retention-days: 2
+          if-no-files-found: error
