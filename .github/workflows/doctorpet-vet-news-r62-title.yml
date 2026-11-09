@@ -1,0 +1,32 @@
+# R6.2 tests only one pre-existing article title's *display* correction.
+# No mutation, claim, media download, publisher request, deployment, or private source.
+name: DoctorPet Vet News R6.2 Known Encoding Review
+on:
+  push:
+    branches:
+      - team3-vet-news-r4-staging-20261108
+    paths:
+      - .github/workflows/doctorpet-vet-news-r62-title.yml
+      - vet-news/staging/r62-title-encoding-review-only.html
+      - vet-news/staging/r62-title-encoding-live-test.cjs
+  pull_request:
+    branches:
+      - main
+    paths:
+      - .github/workflows/doctorpet-vet-news-r62-title.yml
+      - vet-news/staging/r62-title-encoding-review-only.html
+      - vet-news/staging/r62-title-encoding-live-test.cjs
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  one-title-display-gate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Read isolated code only
+        uses: actions/checkout@v4
+      - name: Exact known title correction, source preservation and live DEV API
+        shell: bash
+        run: |
+          node vet-news/staging/r62-title-encoding-live-test.cjs
