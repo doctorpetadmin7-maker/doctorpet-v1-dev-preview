@@ -1,0 +1,30 @@
+# R7.6: isolated new-only test; do not rerun R4/R5/R6/R7 earlier suites.
+name: R7.6 metadata-safe preview exact display correction
+on:
+  push:
+    branches: [team3-r76-news-preview-safety-20261109]
+    paths:
+      - vet-news/index.html
+      - vet-news/staging/r76-only-new-display-delta.test.cjs
+      - .github/workflows/r76-news-preview-onefile-delta.yml
+  pull_request:
+    branches: [main]
+    paths:
+      - vet-news/index.html
+      - vet-news/staging/r76-only-new-display-delta.test.cjs
+      - .github/workflows/r76-news-preview-onefile-delta.yml
+permissions:
+  contents: read
+jobs:
+  only-new-display-defects:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Read isolated preview branch
+        uses: actions/checkout@v4
+      - name: Validate only R7.6 summary and damaged title
+        run: node vet-news/staging/r76-only-new-display-delta.test.cjs
+      - name: Ensure no other files touched during test
+        run: |
+          git diff --exit-code
+          echo "Only review branch changed; public Pages main, Site032 and Supabase unchanged."
