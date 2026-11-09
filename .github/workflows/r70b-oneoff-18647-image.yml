@@ -1,0 +1,49 @@
+# One-off isolated failure triage: only previously discovered 18647 photo URL.
+name: R7.0B isolated image 18647 network failure triage
+on:
+  push:
+    branches: [team3-r69-image-render-qa-20261109]
+    paths: [.github/workflows/r70b-oneoff-18647-image.yml]
+permissions:
+  contents: read
+jobs:
+  one-existing-image-only:
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+    steps:
+      - name: Recheck only previously failed 18647 image and trace request failure
+        shell: bash
+        run: |
+          python3 -m pip install --disable-pip-version-check playwright==1.55.0
+          if ! command -v google-chrome >/dev/null 2>&1 && ! command -v chromium >/dev/null 2>&1; then python3 -m playwright install chromium; fi
+          python3 - <<'PY'
+          import html,json,shutil
+          from playwright.sync_api import sync_playwright
+          u="https://www.dailygaewon.com/news/thumbnail/202611/18647_26833_2154_v150.jpg"
+          with sync_playwright() as pw:
+              browser_path=shutil.which("google-chrome") or shutil.which("chromium")
+              launch={"headless":True,"args":["--no-sandbox","--disable-dev-shm-usage"]}
+              if browser_path:launch["executable_path"]=browser_path
+              browser=pw.chromium.launch(**launch)
+              ctx=browser.new_context(viewport={"width":390,"height":844},locale="ko-KR",service_workers="block")
+              page=ctx.new_page()
+              requests=[];responses=[];failed=[];others=[]
+              def route(route):
+                  req=route.request
+                  if req.url==u and req.method=="GET" and req.resource_type=="image":
+                      requests.append(req.url);route.continue_()
+                  else:
+                      others.append(req.url);route.abort()
+              page.route("**/*",route)
+              page.on("response",lambda r:responses.append({"status":r.status,"mime":r.headers.get("content-type")}) if r.url==u else None)
+              page.on("requestfailed",lambda r:failed.append({"url":r.url,"reason":r.failure}) if r.url==u else None)
+              page.set_content("<!doctype html><meta charset='utf-8'><meta http-equiv='Content-Security-Policy' content=\"default-src 'none'; img-src https://www.dailygaewon.com\"><img id='photo' decoding='async' referrerpolicy='no-referrer' src='"+html.escape(u,quote=True)+"'>",wait_until="domcontentloaded")
+              try:page.locator("#photo").evaluate("(el)=>el.decode()",timeout=15000)
+              except Exception as e:print("DECODE_EXCEPTION",type(e).__name__,str(e)[:500])
+              state=page.locator("#photo").evaluate("(el)=>({complete:el.complete,w:el.naturalWidth,h:el.naturalHeight})")
+              print("R70B_ONLY_18647",json.dumps({"requests":len(requests),"responses":responses,"failures":failed,"otherRequests":others,"image":state},ensure_ascii=False),flush=True)
+              assert len(requests)==1 and not others
+              assert len(responses)==1 and responses[0]["status"]==200 and not failed and state["complete"] and state["w"]>0 and state["h"]>0,"R70B still failed; report network failure trace, no more automatic retry"
+              print("PASS R70B 18647 image 1/1; combined R69A 3 + R70 60 + R70B 1 =64/64 distinct; network transient suspected, cannot claim permanent reliability",flush=True)
+              ctx.close();browser.close()
+          PY
