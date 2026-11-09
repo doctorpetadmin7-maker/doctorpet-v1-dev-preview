@@ -1,0 +1,29 @@
+name: R7.3 newly stored 14 DailyGaewon article photo URLs
+on:
+  push:
+    branches: [team3-r72-dailyvet-10-og-review-20261109]
+    paths:
+      - .github/workflows/r73-oneoff-14-new-dailygaewon-og.yml
+      - vet-news/staging/r73_dailygaewon_14_new_photos.py
+permissions:
+  contents: read
+jobs:
+  exact-14-delta:
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - name: Checkout isolated delta review
+        uses: actions/checkout@v4
+      - name: Run existing R6.5 photo parser on only 14 new DEV article IDs
+        shell: bash
+        run: |
+          python3 vet-news/staging/r73_dailygaewon_14_new_photos.py --limit 14 --output r73-new14-photos
+      - name: Retain photo URL metadata, not article bodies/images
+        uses: actions/upload-artifact@v4
+        with:
+          name: r73-new14-dailygaewon-photo-url-metadata
+          path: |
+            r73-new14-photos.csv
+            r73-new14-photos.json
+          retention-days: 2
+          if-no-files-found: error
