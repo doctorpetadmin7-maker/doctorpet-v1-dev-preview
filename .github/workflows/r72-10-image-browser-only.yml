@@ -1,0 +1,39 @@
+name: R7.2 new ten DailyVet CDN images browser decode
+on:
+  push:
+    branches: [team3-r72-dailyvet-10-og-review-20261109]
+    paths:
+      - .github/workflows/r72-10-image-browser-only.yml
+      - vet-news/staging/r72_verify_10_image_browser.py
+permissions:
+  contents: read
+  actions: read
+jobs:
+  exact-new-ten-only:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout isolated QA
+        uses: actions/checkout@v4
+      - name: Reuse already collected R7.2 ten-photo metadata artifact
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh run download 42574964261 --repo doctorpetadmin7-maker/doctorpet-v1-dev-preview \
+            --name r72-dailyvet-existing-ten-photo-metadata --dir r72-metadata
+      - name: Only ten known CDN image requests, decode without saving
+        shell: bash
+        run: |
+          python3 -m pip install --disable-pip-version-check playwright==1.55.0
+          if ! command -v google-chrome >/dev/null 2>&1 && ! command -v chromium >/dev/null 2>&1; then
+            python3 -m playwright install chromium
+          fi
+          python3 vet-news/staging/r72_verify_10_image_browser.py
+      - name: Upload metadata and decode statuses only
+        uses: actions/upload-artifact@v4
+        with:
+          name: r72-ten-photo-browser-status
+          path: r72-dailyvet-10-image-decoding.json
+          retention-days: 2
+          if-no-files-found: error
