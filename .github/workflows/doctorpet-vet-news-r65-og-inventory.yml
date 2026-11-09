@@ -1,0 +1,32 @@
+# R6.5: article-page OG URL inventory only; NEVER download/copy photo bytes.
+name: DoctorPet Vet News R6.5 Photo URL Inventory
+on:
+  push:
+    branches: [team3-vet-news-r4-staging-20261108]
+    paths:
+      - .github/workflows/doctorpet-vet-news-r65-og-inventory.yml
+      - vet-news/staging/r65_dailygaewon_photo_inventory.py
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  og-photo-discovery:
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+    steps:
+      - name: Read review-only script
+        uses: actions/checkout@v4
+      - name: Verify Python script syntax
+        run: python3 -m py_compile vet-news/staging/r65_dailygaewon_photo_inventory.py
+      - name: Pilot 3 previously approved DEV article URLs with robots check
+        run: |
+          python3 vet-news/staging/r65_dailygaewon_photo_inventory.py --limit 3 --output r65-inventory-pilot
+      - name: Upload metadata only, no photo files
+        uses: actions/upload-artifact@v4
+        with:
+          name: r65-pilot-photo-url-metadata-only
+          path: |
+            r65-inventory-pilot.csv
+            r65-inventory-pilot.json
+          retention-days: 1
+          if-no-files-found: error
