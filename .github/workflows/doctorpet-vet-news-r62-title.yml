@@ -9,6 +9,7 @@ on:
       - .github/workflows/doctorpet-vet-news-r62-title.yml
       - vet-news/staging/r62-title-encoding-review-only.html
       - vet-news/staging/r62-title-encoding-live-test.cjs
+      - vet-news/staging/r62-title-browser-e2e.py
   pull_request:
     branches:
       - main
@@ -16,13 +17,14 @@ on:
       - .github/workflows/doctorpet-vet-news-r62-title.yml
       - vet-news/staging/r62-title-encoding-review-only.html
       - vet-news/staging/r62-title-encoding-live-test.cjs
+      - vet-news/staging/r62-title-browser-e2e.py
   workflow_dispatch:
 permissions:
   contents: read
 jobs:
   one-title-display-gate:
     runs-on: ubuntu-latest
-    timeout-minutes: 3
+    timeout-minutes: 6
     steps:
       - name: Read isolated code only
         uses: actions/checkout@v4
@@ -30,3 +32,11 @@ jobs:
         shell: bash
         run: |
           node vet-news/staging/r62-title-encoding-live-test.cjs
+      - name: R6.2 browser actual DOM checks on LIVE DEV 64 rows
+        shell: bash
+        run: |
+          python3 -m pip install --disable-pip-version-check playwright==1.55.0
+          if ! command -v google-chrome >/dev/null 2>&1 && ! command -v chromium >/dev/null 2>&1; then
+            python3 -m playwright install chromium
+          fi
+          python3 vet-news/staging/r62-title-browser-e2e.py
