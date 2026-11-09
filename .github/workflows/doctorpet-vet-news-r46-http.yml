@@ -1,0 +1,117 @@
+# Isolated QA only: no deploys, secrets, publisher requests, or database mutations.
+name: DoctorPet Vet News R4.6 DEV HTTP smoke
+on:
+  push:
+    branches:
+      - team3-vet-news-r4-staging-20261108
+    paths:
+      - .github/workflows/doctorpet-vet-news-r46-http.yml
+      - vet-news/staging/doctorpet-vet-news-r47-live-ui-contract.cjs
+      - vet-news/staging/r4_5-rights-safe-ui.html
+      - vet-news/staging/doctorpet-vet-news-r48-live-browser.py
+      - vet-news/staging/doctorpet-vet-news-r49-browser-direct-cors.py
+      - vet-news/staging/doctorpet-vet-news-r51-surface-gate.py
+      - vet-news/staging/r54-media-contract.test.cjs
+      - vet-news/staging/r54-licensed-media-ready-ui.html
+      - vet-news/staging/r55-licensed-media-attributed-ui.html
+      - vet-news/staging/r56-real-photo-browser-e2e.py
+  pull_request:
+    branches:
+      - main
+    paths:
+      - .github/workflows/doctorpet-vet-news-r46-http.yml
+      - vet-news/staging/doctorpet-vet-news-r47-live-ui-contract.cjs
+      - vet-news/staging/r4_5-rights-safe-ui.html
+      - vet-news/staging/doctorpet-vet-news-r48-live-browser.py
+      - vet-news/staging/doctorpet-vet-news-r49-browser-direct-cors.py
+      - vet-news/staging/doctorpet-vet-news-r51-surface-gate.py
+      - vet-news/staging/r54-media-contract.test.cjs
+      - vet-news/staging/r54-licensed-media-ready-ui.html
+      - vet-news/staging/r55-licensed-media-attributed-ui.html
+      - vet-news/staging/r56-real-photo-browser-e2e.py
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  dev-read-only-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 9
+    steps:
+      - name: Read isolated review branch
+        uses: actions/checkout@v4
+      - name: Check approved origin, v6 rights-safe response, and blocked origin
+        shell: bash
+        run: |
+          python - <<'PY'
+          import json, urllib.request, urllib.error, urllib.parse
+          BASE='https://mabvxdcpmfdzrqlgkxqn.supabase.co/functions/v1/doctorpet-vet-news-release-data'
+          ORIGIN='https://doctorpetadmin7-maker.github.io'
+          def get(method='GET', origin=ORIGIN):
+              req=urllib.request.Request(BASE,method=method,headers={'Origin':origin})
+              try:
+                  with urllib.request.urlopen(req,timeout=12) as r:
+                      return r.status,dict(r.headers),r.read(1500000)
+              except urllib.error.HTTPError as e:
+                  return e.code,dict(e.headers),e.read(1024)
+          status,h,raw=get()
+          assert status==200, f'Unexpected HTTP status: {status}'
+          assert h.get('Access-Control-Allow-Origin')==ORIGIN, 'CORS allowlist issue'
+          assert 'no-store' in h.get('Cache-Control',''), 'Cache policy issue'
+          d=json.loads(raw)
+          assert d.get('version')==2 and d.get('pageSize')==100, 'Legacy response contract changed'
+          g=d.get('groups',{}); st=d.get('states',{})
+          assert set(g)=={'FEED_DAILYGAEWON','REF_DAILYVET','REF_HAPPYPET'}, 'Unexpected source'
+          assert g['REF_DAILYVET']==[] and g['REF_HAPPYPET']==[], 'Private trial rows leaked'
+          for name in ('REF_DAILYVET','REF_HAPPYPET'):
+              assert st[name].get('publicationStatus')=='WITHHELD_RIGHTS_PENDING', 'Missing privacy hold'
+              assert st[name].get('actualCount')==0, 'Private counts leaked'
+          rows=g['FEED_DAILYGAEWON']
+          assert isinstance(rows,list) and len(rows)<=2000, 'Invalid list'
+          for r in rows:
+              assert r.get('sourceId')=='FEED_DAILYGAEWON' and r.get('actualStored') is True, 'Invalid row'
+              assert r.get('image') is None and r.get('excerpt') is None, 'Rights-limited content leaked'
+              assert r.get('imageState')=='WITHHELD_RIGHTS_PENDING' and r.get('excerptState')=='WITHHELD_RIGHTS_PENDING', 'Right hold missing'
+              assert isinstance(r.get('title'),str) and r['title'].strip(), 'Blank title'
+              u=urllib.parse.urlsplit(r.get('url',''))
+              assert u.scheme=='https' and (u.hostname=='dailygaewon.com' or (u.hostname or '').endswith('.dailygaewon.com')), 'Unapproved URL'
+          assert d.get('candidates',{}).get('visibleInRelease') is False, 'Candidate gate bypass'
+          assert get(origin='https://unapproved.invalid')[0]==403, 'Denied Origin should return 403'
+          assert get(method='OPTIONS')[0]==204, 'OPTIONS should return 204'
+          assert get(method='POST')[0]==405, 'POST should return 405'
+          print('PASS: live DEV HTTP/CORS/rights gate; metadata rows:',len(rows),'private rows: 0, photos: 0')
+          PY
+      - name: Verify exact R4.5 UI parser against the LIVE DEV API
+        shell: bash
+        run: |
+          node vet-news/staging/doctorpet-vet-news-r47-live-ui-contract.cjs --fixture
+          node vet-news/staging/doctorpet-vet-news-r47-live-ui-contract.cjs
+      - name: R4.8 full-browser test using LIVE DEV safe metadata (no publisher requests)
+        shell: bash
+        run: |
+          python3 -m pip install --disable-pip-version-check playwright==1.55.0
+          if ! command -v google-chrome >/dev/null 2>&1 && ! command -v chromium >/dev/null 2>&1; then
+            python3 -m playwright install chromium
+          fi
+          python3 vet-news/staging/doctorpet-vet-news-r48-live-browser.py
+      - name: R4.9 actual browser CORS test (GitHub Pages origin, NO site deployment)
+        shell: bash
+        run: |
+          python3 vet-news/staging/doctorpet-vet-news-r49-browser-direct-cors.py
+      - name: R5.1 disabled news surfaces and nonpublic authority read-only regression
+        shell: bash
+        run: |
+          python3 vet-news/staging/doctorpet-vet-news-r51-surface-gate.py
+      - name: R5.4 media readiness contract 100-card fixture and live DEV browser
+        shell: bash
+        run: |
+          node vet-news/staging/r54-media-contract.test.cjs
+          DOCTORPET_NEWS_UI_FILE=r54-licensed-media-ready-ui.html python3 vet-news/staging/doctorpet-vet-news-r49-browser-direct-cors.py
+      - name: R5.5 attribution and 100-card contract with live DEV browser (no publisher requests)
+        shell: bash
+        run: |
+          DOCTORPET_NEWS_UI_FILE=r55-licensed-media-attributed-ui.html node vet-news/staging/r54-media-contract.test.cjs
+          DOCTORPET_NEWS_UI_FILE=r55-licensed-media-attributed-ui.html python3 vet-news/staging/doctorpet-vet-news-r49-browser-direct-cors.py
+      - name: R5.6 decoded photo, visible credit and 404 fallback on actual DEV metadata
+        shell: bash
+        run: |
+          python3 vet-news/staging/r56-real-photo-browser-e2e.py

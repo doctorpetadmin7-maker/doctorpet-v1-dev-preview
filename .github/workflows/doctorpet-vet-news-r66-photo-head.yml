@@ -1,0 +1,39 @@
+# Bounded photo URL status check. Only HEAD; no image bytes, media artifact, DB or deploy.
+name: DoctorPet Vet News R6.6 Photo Availability HEAD
+on:
+  push:
+    branches: [team3-vet-news-r4-staging-20261108]
+    paths:
+      - .github/workflows/doctorpet-vet-news-r66-photo-head.yml
+      - vet-news/staging/r66_dailygaewon_photo_head_verify.py
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  dailygaewon-64-head-only:
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - name: Checkout read-only review code
+        uses: actions/checkout@v4
+      - name: Download prior 64 OG URL inventory without re-fetching article pages
+        uses: actions/download-artifact@v4
+        with:
+          name: r65-full64-photo-url-metadata-only
+          run-id: 42550796628
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Syntax check and HEAD-only test of existing URLs
+        shell: bash
+        run: |
+          python3 -m py_compile vet-news/staging/r66_dailygaewon_photo_head_verify.py
+          python3 vet-news/staging/r66_dailygaewon_photo_head_verify.py
+      - name: Upload only status information, never image bytes
+        uses: actions/upload-artifact@v4
+        with:
+          name: r66-64-jpeg-head-status-metadata-only
+          path: |
+            r66-head64.csv
+            r66-head64.json
+          retention-days: 1
+          if-no-files-found: error
