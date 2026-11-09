@@ -1,0 +1,27 @@
+name: R7.2 one-time ten missing DailyVet OG URLs
+on:
+  push:
+    branches: [team3-r72-dailyvet-10-og-review-20261109]
+    paths:
+      - .github/workflows/r72-dailyvet-missing10-photo-meta.yml
+      - vet-news/staging/r72_dailyvet_missing10_og_inventory.py
+permissions:
+  contents: read
+jobs:
+  private-ten-articles:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout isolated review branch
+        uses: actions/checkout@v4
+      - name: One-off robots-gated metadata query for 10 existing article URLs
+        run: python3 vet-news/staging/r72_dailyvet_missing10_og_inventory.py
+      - name: Upload short-lived metadata report, never photos or article bodies
+        uses: actions/upload-artifact@v4
+        with:
+          name: r72-dailyvet-existing-ten-photo-metadata
+          path: |
+            r72-dailyvet-10-metadata.json
+            r72-dailyvet-10-metadata.csv
+          retention-days: 2
+          if-no-files-found: error
