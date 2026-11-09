@@ -1,0 +1,44 @@
+name: R7.5 verify only new 14 DEV safe API delta
+on:
+  push:
+    branches: [team3-r72-dailyvet-10-og-review-20261109]
+    paths:
+      - .github/workflows/r75-new14-public-safe-api-delta.yml
+permissions:
+  contents: read
+jobs:
+  new-14-only:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Check the 14 newly stored articles are returned by approved safe read API
+        shell: bash
+        run: |
+          node --input-type=module <<'NODE'
+          import assert from 'node:assert/strict';
+          const endpoint='https://mabvxdcpmfdzrqlgkxqn.supabase.co/functions/v1/doctorpet-vet-news-release-data';
+          const origin='https://doctorpetadmin7-maker.github.io';
+          const response=await fetch(endpoint,{method:'GET',headers:{Origin:origin},signal:AbortSignal.timeout(16000)});
+          assert.equal(response.status,200,'DEV safe read HTTP200');
+          assert.equal(response.headers.get('access-control-allow-origin'),origin,'Exact allowed Origin');
+          const p=await response.json();
+          assert.equal(p.version,2);
+          assert.equal(p.pageSize,100);
+          const rows=p.groups.FEED_DAILYGAEWON;
+          assert(rows.length>=78,'At least 78 rows after successful 14 new article ingestion');
+          assert.equal(new Set(rows.map(r=>r.url)).size,rows.length,'No duplicate URLs');
+          const newIds=Array.from({length:14},(_,i)=>String(18677+i));
+          const existing=new Map(rows.map(x=>[new URL(x.url).searchParams.get('idxno'),x]));
+          for(const id of newIds){
+            const article=existing.get(id);
+            assert(article,'Missing newly saved DEV article '+id);
+            assert(article.actualStored===true,'Stored flag drift for '+id);
+            assert(article.image===null&&article.excerpt===null,'Unlicensed media unexpectedly published for '+id);
+            assert(article.sourceId==='FEED_DAILYGAEWON','Source policy drift');
+          }
+          for(const k of ['REF_DAILYVET','REF_HAPPYPET']){
+            assert(Array.isArray(p.groups[k])&&p.groups[k].length===0,'Private source leaked: '+k);
+            assert(p.states[k].actualCount===0,'Withheld source state drift');
+          }
+          console.log('PASS R7.5 LIVE DEV API new14/14 present, total public metadata',rows.length, 'image/excerpt NULL, private sources 0, CORS approved');
+          NODE
