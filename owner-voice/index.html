@@ -1,0 +1,352 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#f5f7ff" />
+  <meta name="description" content="닥터펫 원장님 전용 말 한마디 업무 등록. 로컬 저장·세션 유지·자동 복원" />
+  <title>닥터펫 · 원장님 음성 업무비서</title>
+  <style>
+    :root { color-scheme: light; --ink:#152345; --muted:#61708b; --primary:#3e48c5; --primary2:#303aab; --border:#dae0f1; --bg:#f4f6fe; --card:#fff; --light:#eef0ff; --green:#167c61; --red:#bd3444; }
+    * { box-sizing:border-box; }
+    body { margin:0; font-family: system-ui,-apple-system,"Noto Sans KR","Malgun Gothic",sans-serif; background:var(--bg); color:var(--ink); font-size:15px; line-height:1.5; }
+    .shell { max-width:760px; margin:0 auto; padding:0 15px 50px; }
+    header { display:flex; align-items:center; justify-content:space-between; padding:18px 0 14px; gap:10px; }
+    .logo { font-weight:800; color:var(--primary2); font-size:17px; letter-spacing:-.5px; }
+    .hintbadge { border:1px solid #c5cdfa; background:#e9edff; color:#3644a8; border-radius:20px; padding:4px 9px; font-size:11px; font-weight:750; }
+    .hero { background:linear-gradient(130deg,#323cb4,#6566d8); color:#fff; border-radius:19px; padding:20px 20px 21px; box-shadow:0 10px 25px #27309b24; }
+    .hero small {display:block; font-weight:750; opacity:.86; letter-spacing:.4px;}
+    .hero h1 {font-size:24px; line-height:1.3; letter-spacing:-.8px; margin:8px 0;}
+    .hero p { margin:0; opacity:.91; font-size:13px; }
+    .panel { margin-top:14px; padding:18px; border-radius:16px; background:var(--card); border:1px solid var(--border); box-shadow:0 2px 12px #15234508; }
+    .section-head { display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:11px; }
+    h2 { margin:0; font-size:17px; letter-spacing:-.5px; }
+    .small { font-size:12px; color:var(--muted); }
+    .status {font-size:12px;font-weight:650;color:var(--muted);display:flex;align-items:center;gap:7px;}
+    .dot { width:8px;height:8px;border-radius:50%;background:#b0bbcf;display:inline-block;flex:0 0 auto; }
+    .dot.live {background:#ec495a;animation:pulse 1.4s infinite;}
+    @keyframes pulse {50%{box-shadow:0 0 0 6px #f04e591c}}
+    .mic-row {display:flex;align-items:center;gap:11px;flex-wrap:wrap;margin:6px 0 13px;}
+    button {font-family:inherit;font-weight:750;cursor:pointer;border-radius:11px;min-height:43px;border:1px solid transparent;padding:10px 14px;font-size:14px;touch-action:manipulation;}
+    button:focus-visible,input:focus-visible,textarea:focus-visible {outline:3px solid #8994ed;outline-offset:2px;}
+    button:disabled {opacity:.58;cursor:not-allowed;}
+    button.primary { background:var(--primary);color:#fff; }
+    button.primary:hover {background:var(--primary2);}
+    button.outline {border-color:var(--border);background:#fff;color:#273b76;}
+    button.danger {background:#fff1f2;border:1px solid #f9c8ce;color:#a02d3a;}
+    .mic {display:inline-flex;align-items:center;gap:8px;min-width:124px;justify-content:center;}
+    .mic svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;}
+    .mic.recording {background:#c9334c;}
+    .voice-state {font-size:13px;color:var(--muted);flex:1;min-width:150px;}
+    .speech-wrap {position:relative;}
+    #speech {width:100%; min-height:128px;max-height:190px; resize:vertical;overflow-y:auto;background:#f9faff;border:1px solid #c9d1f0;border-radius:11px;padding:13px 14px;font:inherit;font-size:16px;line-height:1.65;color:#1a2747;}
+    #speech::placeholder{color:#939eb2;}
+    .assist {display:flex;justify-content:space-between;gap:12px;align-items:center;margin:7px 0 0; flex-wrap:wrap;}
+    .chips {display:flex;gap:7px;flex-wrap:wrap;margin:11px 0 0;}
+    .chip{background:#f0f2ff;border:1px solid #d9defe;color:#3542a6;border-radius:30px;font-size:12px;min-height:32px;padding:5px 11px;}
+    .editgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px; margin:14px 0 12px;}
+    label{display:block;font-size:12px;font-weight:750;color:#485975;}
+    label input{margin-top:5px;width:100%;height:44px;border:1px solid var(--border);background:#fff;border-radius:9px;padding:9px;font:inherit;font-size:14px;color:var(--ink);}
+    label.wide{grid-column:1/-1;}
+    .preview{background:#f6f8ff;border:1px dashed #b9c4ea;border-radius:10px;padding:10px 12px;font-size:13px;margin:11px 0;}
+    .preview strong{color:#303caa;}
+    .actions {display:flex;gap:9px;flex-wrap:wrap;}
+    .actions button:first-child{flex:1;}
+    .feedback { min-height:21px; margin-top:8px; color:var(--green); font-weight:650;font-size:13px; }
+    .count {background:#eaeefe;color:#3442ae;border-radius:30px;font-size:12px;padding:4px 9px;font-weight:800;}
+    .toolbar {display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:11px 0 14px;}
+    .toolbar button{font-size:12px;min-height:34px;padding:7px 11px;}
+    .tasks {display:flex;flex-direction:column;gap:9px;}
+    .task {display:flex;gap:11px;align-items:flex-start;border:1px solid var(--border);border-radius:12px;background:#fff;padding:12px 11px;}
+    .task input[type=checkbox]{height:21px;width:21px;accent-color:#424bd0;flex:0 0 auto;margin-top:3px;cursor:pointer;}
+    .taskinfo{flex:1;min-width:0;}
+    .task-title{display:block;font-size:15px;word-break:break-word;font-weight:750;line-height:1.45;}
+    .task.done .task-title{text-decoration:line-through;color:#8c97ad;}
+    .task-sub {display:flex;flex-wrap:wrap;gap:7px;margin-top:5px;align-items:center;color:#677690;font-size:12px;}
+    .pill {background:#eef1ff;color:#3441a7;border-radius:5px;padding:2px 7px;}
+    .trash {min-height:35px;padding:5px 7px;background:transparent;color:#7e8aa0;border:1px solid transparent;font-size:12px;}
+    .empty {border:1px dashed #bdc7e4;border-radius:12px;text-align:center;padding:25px 15px;color:#72809a;font-size:13px;}
+    .foot {font-size:12px;line-height:1.6;color:#707c95;padding:15px 2px;}
+    .foot strong{color:#424e6b;}
+    .sr-only {position:absolute;left:-9999px;}
+    @media(max-width:390px){.hero h1{font-size:22px}.shell{padding-left:11px;padding-right:11px}.panel{padding:14px}.editgrid{grid-template-columns:1fr}.mic-row{gap:7px}.voice-state{min-width:130px}}
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <header><span class="logo">🐾 닥터펫 <span style="color:#34415a;font-weight:600">/ 원장 개인비서</span></span><span class="hintbadge">로컬 업무비서</span></header>
+    <section class="hero">
+      <small>닥터펫 · 원장님 1분 개인비서</small>
+      <h1>말 한마디로<br />오늘의 업무를 등록하세요.</h1>
+      <p>음성 → 실시간 글자 → 일정 인식 → 내 기기에 저장</p>
+    </section>
+    <section class="panel" aria-label="말로 업무 입력">
+      <div class="section-head"><h2>🎙 업무 말하기</h2><span id="state" class="status" aria-live="polite"><span class="dot" id="stateDot"></span><span id="stateText">마이크 대기</span></span></div>
+      <div class="mic-row">
+        <button type="button" id="micButton" class="primary mic" aria-pressed="false" title="마이크로 업무 말하기">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="2" width="6" height="12" rx="3"></rect><path d="M5 10a7 7 0 0 0 14 0M12 17v5m-5 0h10"></path></svg><span id="micLabel">말하기 시작</span>
+        </button>
+        <span id="voiceNotice" class="voice-state">누르고 천천히 말하세요. 멈춤 버튼을 누를 때까지 계속 듣습니다.</span>
+      </div>
+      <div class="speech-wrap">
+        <label for="speech" class="sr-only">음성 변환 내용 또는 직접 입력</label>
+        <textarea id="speech" placeholder="예: 내일 오후 3시 보호자 전화하기&#10;마이크가 안 되면 직접 입력하거나 휴대폰 키보드의 🎤를 이용하세요."></textarea>
+      </div>
+      <div class="assist"><span class="small" id="voiceHelp">말하는 동안 글자가 올라옵니다. 종료 후 수정할 수 있어요.</span><button id="clearText" class="outline" type="button" style="min-height:32px;padding:5px 10px;font-size:12px">입력 지우기</button></div>
+      <div class="chips" aria-label="빠른 예시">
+        <button class="chip" type="button" data-example="내일 오후 3시 보호자 전화하기">내일 3시 보호자 전화</button>
+        <button class="chip" type="button" data-example="오늘 오후 5시 병원 재고 확인">오늘 5시 재고 확인</button>
+        <button class="chip" type="button" data-example="다음 주 월요일 오전 10시 직원 회의">월요일 직원 회의</button>
+      </div>
+      <div class="editgrid">
+        <label class="wide">업무 제목 <input id="titleInput" type="text" maxlength="150" placeholder="음성에서 자동 추출됩니다" /></label>
+        <label>업무 유형 <input id="categoryInput" type="text" maxlength="30" placeholder="자동 분류" /></label>
+        <label>예정 일시 <input id="dueInput" type="datetime-local" /></label>
+      </div>
+      <div id="preview" class="preview" aria-live="polite">말하거나 예시를 누르면 업무가 자동 정리됩니다.</div>
+      <div class="actions"><button type="button" class="primary" id="saveButton">✓ 내 업무에 등록</button><button type="button" class="outline" id="cancelEdit" hidden>수정 취소</button></div>
+      <div class="feedback" id="feedback" role="status" aria-live="polite"></div>
+    </section>
+    <section class="panel" aria-label="저장된 업무">
+      <div class="section-head"><h2>📋 내 업무 목록</h2><span class="count" id="countBadge">0건</span></div>
+      <div class="small" id="storageInfo">이 기기·브라우저에 자동 저장됩니다. 다른 기기와 동기화되지 않습니다.</div>
+      <div class="toolbar"><button class="outline" id="filterAll" type="button" aria-pressed="true">전체</button><button class="outline" id="filterOpen" type="button" aria-pressed="false">할 일</button><button class="outline" id="filterDone" type="button" aria-pressed="false">완료</button><span style="flex:1"></span><button class="outline" type="button" id="exportButton">기록 백업 ↓</button><button class="outline" type="button" id="importButton">복원 ↑</button><button class="danger" type="button" id="eraseAllButton">내 기록 전체 삭제</button></div>
+      <input type="file" id="importFile" accept="application/json,.json" hidden />
+      <div class="tasks" id="tasks"></div>
+    </section>
+    <div class="foot"><strong>이용 안내</strong> · 서버 저장 없이 현재 기기의 업무를 실제로 저장·관리합니다. 한국어 음성인식은 브라우저에서 지원할 때 동작합니다. 일부 브라우저는 음성 인식에 온라인 서비스를 사용합니다. 일정·업무는 계정 또는 로컬 브라우저별 localStorage에만 저장되며 다른 기기로 자동 전송되지 않습니다. 개인정보·실제 진료정보 대신 시험용 내용을 사용해 주세요. 브라우저 데이터 삭제 시 기록이 없어질 수 있으므로 필요하면 [기록 백업]을 사용하세요.</div>
+  </main>
+<script>
+(() => {
+  'use strict';
+  let ownerUserId='local-device', ownerContext='device';
+  try {
+    const session=JSON.parse(sessionStorage.getItem('dp_session')||'null');
+    if(session?.user?.id) ownerUserId=String(session.user.id);
+    const context=sessionStorage.getItem('dp_context');
+    if(context) ownerContext=String(context);
+  } catch {}
+  const KEY='doctorpet:owner:voice-assistant:v1:'+encodeURIComponent(ownerUserId)+':'+encodeURIComponent(ownerContext);
+  const DRAFT_KEY=KEY+':draft';
+  const $ = id => document.getElementById(id);
+  let tasks=[];
+  let storageOK=true;
+  let filter='all';
+  let editingId=null;
+  let recognition=null;
+  let listening=false;
+  let attempted=false;
+  let committed='';
+  let sessionFinal='';
+  let sessionInterim='';
+  let everStarted=false;
+  let retryTimeout=null;
+  let stopForError=false;
+  let manualStop=false;
+  let speechSupported=!!(window.SpeechRecognition||window.webkitSpeechRecognition);
+  let speechEpoch=0;
+  const weekdays=['일','월','화','수','목','금','토'];
+  const timestamp = new Date();
+  const todayLocal = () => new Date();
+  const pad = n=>String(n).padStart(2,'0');
+  const toLocalInput = d=>`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  const uid = () => (window.crypto && crypto.randomUUID) ? crypto.randomUUID() : `id-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+  const escapeHTML = text => String(text).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  function getStored(key, fallback){try {const text=localStorage.getItem(key);return text?JSON.parse(text):fallback;}catch(err){storageOK=false;showStorageIssue();return fallback;}}
+  function saveStored(key,value){try {localStorage.setItem(key,JSON.stringify(value));return true;}catch(err){storageOK=false;showStorageIssue();return false;}}
+  function showStorageIssue(){ $('storageInfo').textContent='이 브라우저의 로컬 저장이 제한되어 있어 새로고침 후 복원되지 않을 수 있습니다. 기록 백업을 이용하세요.'; }
+  function saveTasks(){saveStored(KEY,tasks);}
+  function saveDraft(){saveStored(DRAFT_KEY,{speech:$('speech').value,title:$('titleInput').value,category:$('categoryInput').value,due:$('dueInput').value});}
+  function readDraft(){const v=getStored(DRAFT_KEY,null);if(v&&typeof v==='object'){ $('speech').value=String(v.speech||''); $('titleInput').value=String(v.title||''); $('categoryInput').value=String(v.category||''); $('dueInput').value=String(v.due||''); } }
+  function validTask(t){return !!t && typeof t.id==='string' && typeof t.title==='string' && t.title.length<=200;}
+  function loadTasks(){const data=getStored(KEY,[]);tasks=Array.isArray(data)?data.filter(validTask).slice(0,500):[];}
+  function addDays(date,days){const d=new Date(date);d.setDate(d.getDate()+days);return d;}
+  function parseCommand(text){
+    const raw=String(text||'').replace(/\s+/g,' ').trim();
+    if(!raw) return {title:'',category:'일반 업무',due:null,dateLabel:'일정 미지정'};
+    const now=todayLocal();let due=null,base=null;
+    let m = raw.match(/(20\d\d)[-./년 ]+\s*(\d{1,2})[-./월 ]+\s*(\d{1,2})\s*일?/);
+    if(m){base=new Date(+m[1],+m[2]-1,+m[3]);}
+    else {
+      m=raw.match(/(\d{1,2})\s*월\s*(\d{1,2})\s*일/);
+      if(m){base=new Date(now.getFullYear(),+m[1]-1,+m[2]);if(base.getTime()<new Date(now.getFullYear(),now.getMonth(),now.getDate()).getTime()) base.setFullYear(base.getFullYear()+1);}
+      else if(/모레/.test(raw)) base=addDays(now,2);
+      else if(/내일/.test(raw)) base=addDays(now,1);
+      else if(/오늘/.test(raw)) base=addDays(now,0);
+      else {
+        m=raw.match(/(다음\s*주|이번\s*주)?\s*(일|월|화|수|목|금|토)요일/);
+        if(m){const target=weekdays.indexOf(m[2]);let days=(target-now.getDay()+7)%7;
+          if(m[1]&&m[1].replace(/\s+/g,'')==='다음주'){const monday=(8-now.getDay())%7||7;days=monday+(target===0?6:target-1);}
+          else if(!days) days=7;
+          base=addDays(now,days);
+        }
+      }
+    }
+    const tm=raw.match(/(오전|오후|새벽|밤)?\s*(\d{1,2})\s*시\s*(?:(\d{1,2})\s*분|(반))?/);
+    if(base || tm){ if(!base) base=now;
+      let hour=tm?Number(tm[2]):9;
+      const min=tm?(tm[4]?30:Number(tm[3]||0)):0;
+      const period=tm?.[1]||'';
+      if(/오후|밤/.test(period)&&hour<12)hour+=12;
+      if(/오전|새벽/.test(period)&&hour===12)hour=0;
+      if(hour<=23&&min<=59){due=new Date(base.getFullYear(),base.getMonth(),base.getDate(),hour,min);if(!isFinite(due.getTime()))due=null;}
+      if(!m && tm && !/오늘|내일|모레|요일|\d+월\s*\d+일/.test(raw) && due && due<now)due=addDays(due,1);
+    }
+    let cleaned=raw
+      .replace(/(20\d\d)[-./년 ]+\s*\d{1,2}[-./월 ]+\s*\d{1,2}\s*일?/g,' ')
+      .replace(/\d{1,2}\s*월\s*\d{1,2}\s*일/g,' ')
+      .replace(/(다음\s*주|이번\s*주)?\s*(일|월|화|수|목|금|토)요일/g,' ')
+      .replace(/오늘|내일|모레/g,' ')
+      .replace(/(오전|오후|새벽|밤)?\s*\d{1,2}\s*시\s*(?:(\d{1,2})\s*분|(반))?/g,' ')
+      .replace(/(?:메모|일정|할\s*일)\s*(?:등록|추가|해줘|해\s*줘)?/g,' ')
+      .replace(/(기억해\s*줘|잡아\s*줘|등록해\s*줘|부탁해|예정이야|해야\s*해요?|할\s*것|해\s*줘|좀)/g,' ')
+      .replace(/\s+/g,' ').replace(/^[,.:\s]+|[,.:\s]+$/g,'').trim();
+    if(!cleaned)cleaned=raw;
+    let category='일반 업무';
+    if(/전화|연락|상담|문자|안내|보호자/.test(cleaned))category='보호자 응대';
+    else if(/재진|진료|수술|검사|접종|처방/.test(cleaned))category='진료 일정';
+    else if(/회의|미팅|교육|세미나/.test(cleaned))category='회의·교육';
+    else if(/재고|발주|납품|정산|매출|직원|근무|청소|마감/.test(cleaned))category='병원 운영';
+    return {title:cleaned,category,due:due?toLocalInput(due):null,dateLabel:due?due.toLocaleString('ko-KR',{month:'short',day:'numeric',weekday:'short',hour:'numeric',minute:'2-digit'}):'일정 미지정'};
+  }
+  function onSpeechChange(auto=true){const value=$('speech').value;const parsed=parseCommand(value);
+    if(auto){$('titleInput').value=parsed.title;$('categoryInput').value=parsed.category;$('dueInput').value=parsed.due||'';}
+    renderPreview();saveDraft();
+  }
+  function renderPreview(){const title=$('titleInput').value.trim()||'업무 제목 미입력';const cat=$('categoryInput').value.trim()||'일반 업무';const due=$('dueInput').value;
+    const date=due?new Date(due).toLocaleString('ko-KR',{month:'long',day:'numeric',weekday:'short',hour:'numeric',minute:'2-digit'}):'일정 미지정';
+    $('preview').replaceChildren();
+    const strong=document.createElement('strong');strong.textContent='자동 정리 → ';
+    const body=document.createElement('span');body.textContent=`${title}  ·  ${cat}  ·  ${date}`;
+    $('preview').append(strong,body);
+  }
+  function feedback(msg,err=false){$('feedback').textContent=msg;$('feedback').style.color=err?'#bd3444':'#167c61';}
+  function clearEditor(){ $('speech').value='';$('titleInput').value='';$('dueInput').value='';$('categoryInput').value='';editingId=null;$('saveButton').textContent='✓ 내 업무에 등록';$('cancelEdit').hidden=true;renderPreview();saveDraft();}
+  function formatDate(value){if(!value)return '일정 미지정';const d=new Date(value);if(isNaN(d.getTime()))return '일정 미지정';return d.toLocaleString('ko-KR',{month:'short',day:'numeric',weekday:'short',hour:'numeric',minute:'2-digit'});}
+  function render(){const rows=tasks.filter(t=>filter==='all'||(filter==='done'?!!t.done:!t.done))
+    .sort((a,b)=>{if(a.done!==b.done)return Number(a.done)-Number(b.done);if(a.due&&!b.due)return -1;if(!a.due&&b.due)return 1;return a.due&&b.due?a.due.localeCompare(b.due):String(b.createdAt).localeCompare(String(a.createdAt));});
+    $('countBadge').textContent=`${tasks.filter(t=>!t.done).length}건 남음`;
+    const target=$('tasks');target.replaceChildren();
+    if(!rows.length){const p=document.createElement('div');p.className='empty';p.textContent=tasks.length?'해당 상태의 업무가 없습니다.':'아직 등록한 업무가 없어요. 위에서 말하거나 예시를 눌러 등록해 보세요.';target.append(p);return;}
+    for(const t of rows){
+      const item=document.createElement('div');item.className='task'+(t.done?' done':'');
+      const check=document.createElement('input');check.type='checkbox';check.checked=!!t.done;check.setAttribute('aria-label',`${t.title} 완료`);check.onchange=()=>{t.done=check.checked;saveTasks();render();};
+      const info=document.createElement('div');info.className='taskinfo';
+      const name=document.createElement('span');name.className='task-title';name.textContent=t.title;
+      const sub=document.createElement('div');sub.className='task-sub';
+      const pill=document.createElement('span');pill.className='pill';pill.textContent=t.category||'일반 업무';
+      const date=document.createElement('span');date.textContent=formatDate(t.due);sub.append(pill,date);info.append(name,sub);
+      const edit=document.createElement('button');edit.className='trash';edit.type='button';edit.textContent='수정';edit.setAttribute('aria-label',`${t.title} 수정`);
+      edit.onclick=()=>{editingId=t.id;stopSpeech(true);$('speech').value=t.original||t.title;$('titleInput').value=t.title;$('categoryInput').value=t.category||'';$('dueInput').value=t.due||'';$('saveButton').textContent='✓ 변경 내용 저장';$('cancelEdit').hidden=false;renderPreview();saveDraft();window.scrollTo({top:0,behavior:'smooth'});};
+      const remove=document.createElement('button');remove.className='trash';remove.type='button';remove.textContent='삭제';remove.setAttribute('aria-label',`${t.title} 삭제`);
+      remove.onclick=()=>{if(window.confirm(`“${t.title}” 업무를 삭제할까요?`)){tasks=tasks.filter(r=>r.id!==t.id);saveTasks();render();feedback('업무가 삭제되었습니다.');}};
+      item.append(check,info,edit,remove);target.append(item);
+    }
+  }
+  function setState(text,live=false){$('stateText').textContent=text;$('stateDot').classList.toggle('live',live);$('micButton').classList.toggle('recording',live);$('micButton').setAttribute('aria-pressed',String(live));$('micLabel').textContent=live?'말하기 종료':'말하기 시작';}
+  function renderLive(){const parts=[committed,sessionFinal,sessionInterim].map(t=>t.trim()).filter(Boolean);$('speech').value=parts.join(' ');$('speech').scrollTop=$('speech').scrollHeight;onSpeechChange();}
+  function showSpeechFallback(message){$('voiceNotice').textContent=message;$('voiceHelp').textContent='직접 입력하거나 삼성 키보드의 마이크를 눌러 말해도 됩니다.';}
+  function startSpeech(){
+    if(listening)return;
+    const Klass=window.SpeechRecognition||window.webkitSpeechRecognition;
+    if(!Klass){showSpeechFallback('이 브라우저에서는 웹 음성인식을 지원하지 않습니다. 키보드 마이크를 이용하세요.');setState('마이크 미지원');$('speech').focus();return;}
+    const epoch=++speechEpoch;
+    listening=true;manualStop=false;stopForError=false;attempted=false;committed=$('speech').value.trim();sessionFinal='';sessionInterim='';
+    $('speech').readOnly=true;setState('음성 듣는 중',true);$('voiceNotice').textContent='말하는 동안 글자가 보여요. 잠깐 쉬어도 계속 듣습니다. 종료는 버튼으로 하세요.';
+    bootRecognition(epoch);
+  }
+  function bootRecognition(epoch){
+    if(!listening || epoch!==speechEpoch)return;
+    const Klass=window.SpeechRecognition||window.webkitSpeechRecognition;
+    if(!Klass)return;
+    sessionFinal='';sessionInterim='';attempted=false;
+    const recog=new Klass();recognition=recog;recog.lang='ko-KR';recog.continuous=true;recog.interimResults=true;recog.maxAlternatives=1;
+    recog.onstart=()=>{if(epoch!==speechEpoch)return;everStarted=true;if(listening)setState('음성 듣는 중',true);};
+    recog.onresult=event=>{
+      if(epoch!==speechEpoch)return;
+      let fin='',inter='';
+      for(let i=0;i<event.results.length;i++){
+        const r=event.results[i];const v=r?.[0]?.transcript||'';
+        if(r.isFinal)fin+=' '+v;else inter+=' '+v;
+      }
+      sessionFinal=fin.trim();sessionInterim=inter.trim();renderLive();
+    };
+    recog.onerror=event=>{
+      if(epoch!==speechEpoch)return;
+      const code=event.error||'unknown';
+      if(code==='not-allowed'||code==='service-not-allowed'||code==='audio-capture'){
+        stopForError=true;listening=false;manualStop=true;showSpeechFallback('마이크 권한이 거부되었거나 마이크를 사용할 수 없습니다. 휴대폰 설정을 확인하세요.');setState('마이크 권한 확인');
+      }else if(code==='network'){
+        stopForError=true;listening=false;manualStop=true;showSpeechFallback('음성인식 연결에 문제가 있습니다. 입력한 글은 유지됩니다.');setState('연결 오류');
+      }else if(code!=='no-speech'&&code!=='aborted'){
+        $('voiceNotice').textContent='인식 연결을 다시 시도하고 있습니다. 기록은 유지됩니다.';
+      }
+    };
+    recog.onend=()=>{
+      if(epoch!==speechEpoch)return;
+      // 브라우저는 침묵 구간에서 자동 종료할 수 있다. 사용자가 누른 종료와 구분한다.
+      const lastFin=sessionFinal.trim();const lastInter=sessionInterim.trim();
+      if(lastFin)committed=[committed,lastFin].filter(Boolean).join(' ');
+      if(manualStop&&lastInter&&!lastFin.includes(lastInter))committed=[committed,lastInter].filter(Boolean).join(' ');
+      sessionFinal='';sessionInterim='';
+      renderLive();recognition=null;
+      if(listening&&!stopForError){setState('계속 듣는 중',true);retryTimeout=setTimeout(()=>{retryTimeout=null;bootRecognition(epoch);},250);}
+      else{$('speech').readOnly=false;setState(stopForError?'음성 인식 중지':'마이크 대기',false);$('voiceNotice').textContent=stopForError?'직접 입력이나 키보드 마이크로 계속 등록할 수 있어요.':'말하기가 종료됐습니다. 내용을 확인한 뒤 [내 업무에 등록]을 누르세요.';saveDraft();}
+    };
+    try{recog.start();}catch(err){recognition=null;listening=false;$('speech').readOnly=false;setState('마이크 시작 실패');showSpeechFallback('마이크를 시작하지 못했어요. 브라우저 권한·보안 연결을 확인하세요.');}
+  }
+  function stopSpeech(discard=false){
+    if(!listening)return;
+    manualStop=true;listening=false;
+    if(retryTimeout){clearTimeout(retryTimeout);retryTimeout=null;}
+    if(discard){speechEpoch++;sessionFinal='';sessionInterim='';}
+    if(recognition){try{discard?recognition.abort():recognition.stop();}catch(err){}}
+    if(discard||!recognition){recognition=null;$('speech').readOnly=false;setState('마이크 대기',false);}
+    else setState('텍스트 확정 중');
+  }
+  $('micButton').onclick=()=>listening?stopSpeech():startSpeech();
+  $('speech').addEventListener('input',()=>{if(!listening)onSpeechChange();});
+  for(const field of ['titleInput','categoryInput','dueInput'])$(field).addEventListener('input',()=>{renderPreview();saveDraft();});
+  $('clearText').onclick=()=>{stopSpeech(true);clearEditor();feedback('입력 내용을 지웠습니다.');};
+  $('cancelEdit').onclick=()=>{stopSpeech(true);clearEditor();feedback('수정이 취소되었습니다.');};
+  document.querySelectorAll('[data-example]').forEach(b=>b.onclick=()=>{stopSpeech(true);$('speech').value=b.dataset.example;onSpeechChange();feedback('예시 문장을 넣었어요. 아래에서 저장해 보세요.');});
+  $('saveButton').onclick=()=>{
+    if(listening){feedback('먼저 [말하기 종료]를 누른 뒤 저장해 주세요.',true);return;}
+    const title=$('titleInput').value.trim();if(!title){feedback('말하거나 업무 제목을 입력해 주세요.',true);$('speech').focus();return;}
+    const item={id:editingId||uid(),title:title.slice(0,150),category:$('categoryInput').value.trim().slice(0,30)||'일반 업무',due:$('dueInput').value||null,original:$('speech').value.slice(0,500),createdAt:new Date().toISOString(),done:false};
+    if(editingId){const old=tasks.find(t=>t.id===editingId);if(old){item.createdAt=old.createdAt;item.done=old.done;tasks=tasks.map(t=>t.id===editingId?item:t);}else tasks.unshift(item);}
+    else tasks.unshift(item);
+    const persisted=saveStored(KEY,tasks);
+    render();clearEditor();feedback(persisted?'✓ 업무를 이 기기에 저장했어요. 다시 접속해도 복원됩니다.':'업무가 현재 화면에 등록됐지만 브라우저 저장이 제한되어 있습니다.',!persisted);
+  };
+  for(const btn of ['All','Open','Done']) $('filter'+btn).onclick=()=>{filter=btn.toLowerCase();for(const k of ['All','Open','Done'])$('filter'+k).setAttribute('aria-pressed',String(k===btn));render();};
+  $('exportButton').onclick=()=>{
+    const pack={app:'닥터펫 원장 개인비서',version:1,exportedAt:new Date().toISOString(),tasks:tasks.map(({id,title,category,due,original,createdAt,done})=>({id,title,category,due,original,createdAt,done}))};
+    const blob=new Blob([JSON.stringify(pack,null,2)],{type:'application/json;charset=utf-8'});const url=URL.createObjectURL(blob);
+    const link=document.createElement('a');link.href=url;const d=new Date();link.download=`닥터펫_원장업무_${d.getFullYear()}${pad(d.getMonth()+1)}${pad(d.getDate())}.json`;link.click();
+    setTimeout(()=>URL.revokeObjectURL(url),1200);feedback('업무 기록 백업파일을 만들었습니다.');
+  };
+  $('eraseAllButton').onclick=()=>{
+    if(!window.confirm('이 기기에 저장된 개인비서 업무·초안을 모두 삭제할까요? 백업하지 않은 정보는 복구할 수 없습니다.'))return;
+    tasks=[];editingId=null;
+    try{localStorage.removeItem(KEY);localStorage.removeItem(DRAFT_KEY);}catch{}
+    clearEditor();render();feedback('이 기기에서 개인비서 기록을 삭제했습니다.');
+  };
+  $('importButton').onclick=()=>$('importFile').click();
+  $('importFile').onchange=async e=>{
+    const file=e.target.files?.[0];e.target.value='';if(!file)return;
+    if(file.size>2_000_000){feedback('백업파일이 너무 큽니다(2MB 이하만 지원).',true);return;}
+    try{const data=JSON.parse(await file.text());if(data.app!=='닥터펫 원장 개인비서'||!Array.isArray(data.tasks))throw Error('닥터펫 업무 백업 형식이 아닙니다.');
+      const incoming=data.tasks.filter(validTask).slice(0,500);const map=new Map(tasks.map(t=>[t.id,t]));for(const t of incoming)map.set(t.id,{id:t.id,title:t.title.slice(0,150),category:String(t.category||'일반 업무').slice(0,30),due:t.due||null,original:String(t.original||'').slice(0,500),createdAt:t.createdAt||new Date().toISOString(),done:!!t.done});
+      tasks=[...map.values()].slice(0,500);saveTasks();render();feedback(`✓ ${incoming.length}건을 불러왔습니다. 기존 기록과 병합했어요.`);
+    }catch(err){feedback('복원 실패: '+err.message,true);}
+  };
+  window.addEventListener('pagehide',()=>{if(listening)stopSpeech();});
+  loadTasks();readDraft();if($('speech').value)renderPreview();render();
+  if(ownerUserId==='local-device')$('storageInfo').textContent='이 브라우저에만 보관됩니다. 원장방에서 로그인 후 진입하면 계정별로 저장합니다.';
+  if(!window.isSecureContext)showSpeechFallback('마이크는 HTTPS 또는 localhost에서만 안정적으로 동작합니다. 안전한 주소에서 열어주세요.');
+  if(!speechSupported){setState('마이크 미지원');showSpeechFallback('이 브라우저에서는 웹 음성인식이 안 될 수 있어요. 키보드 마이크 또는 직접 입력을 이용하세요.');}
+})();
+</script>
+</body>
+</html>
