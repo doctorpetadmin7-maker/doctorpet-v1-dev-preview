@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="theme-color" content="#f6f8ff" />
+<meta name="description" content="닥터펫 보호자 음성→글자 실제 입력. 녹음파일 생성 없음. 한국어 음성인식과 로컬 초안 보존." />
+<title>닥터펫 | 보호자 음성→글자</title>
+<style>
+:root{font-family:system-ui,-apple-system,"Noto Sans KR","Apple SD Gothic Neo","Malgun Gothic",sans-serif;color:#19264b;background:#f6f8ff;font-synthesis:none}
+*{box-sizing:border-box}body{margin:0;min-height:100vh;background:linear-gradient(180deg,#edf1ff 0,#f6f8ff 250px);font-size:15px;line-height:1.55}
+button,textarea,input{font:inherit}button{touch-action:manipulation;cursor:pointer}button:focus-visible,textarea:focus-visible,input:focus-visible{outline:3px solid #8fa4ff;outline-offset:3px}
+.wrap{max-width:690px;margin:auto;padding:0 16px 70px}header{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:22px 2px 17px}
+.brand{display:flex;align-items:center;gap:10px;font-weight:850;color:#273c93;font-size:19px;letter-spacing:-.6px}.mark{display:grid;place-items:center;width:35px;height:35px;background:#364bc7;color:white;border-radius:11px;font-size:20px;font-weight:800}
+.pill{font-size:11px;font-weight:750;padding:6px 10px;border:1px solid #cad4ff;background:#e5ebff;color:#3349a3;border-radius:999px;white-space:nowrap}
+.hero{padding:22px 20px;background:linear-gradient(130deg,#343eaa,#5666d1);color:white;border-radius:19px;box-shadow:0 13px 28px #4357bb25}
+.hero h1{font-size:25px;line-height:1.32;letter-spacing:-.8px;margin:5px 0 10px}.hero .eyebrow{letter-spacing:1px;font-weight:750;font-size:11px;opacity:.9}.hero p{font-size:13px;margin:0;color:#eef1ff}
+.demo-note{padding:12px 14px;background:#fffbef;border:1px solid #f0e0ac;border-radius:11px;color:#75571d;margin:16px 0 0;font-size:12px}
+.panel{margin-top:15px;border-radius:17px;border:1px solid #dde3f3;background:#fff;padding:19px;box-shadow:0 4px 13px #24365b08}
+.panel h2{font-size:17px;margin:0;letter-spacing:-.3px}.sub{font-size:12px;color:#62708b;margin:4px 0 15px}
+.meta{display:flex;align-items:center;justify-content:space-between;gap:9px;flex-wrap:wrap;margin-bottom:16px}.meta strong{font-size:14px}.meta span{color:#64728d;font-size:12px}
+.mic-controls{display:flex;flex-direction:column;align-items:center;gap:9px;padding:8px 0 13px}
+.mic{border:0;border-radius:50%;width:98px;height:98px;background:#4454ca;box-shadow:0 9px 25px #4051c53f;display:grid;place-items:center;color:white;position:relative;transition:transform .12s,background .15s}.mic:active{transform:scale(.97)}.mic svg{width:40px;height:40px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linejoin:round;stroke-linecap:round}
+.mic.on{background:#dc435c;box-shadow:0 0 0 10px #fce3e8,0 10px 24px #c83a5860}.mic.on:after{content:"";position:absolute;inset:-8px;border:2px solid #ef8091;border-radius:50%;animation:pulse 1.4s ease-in-out infinite}@keyframes pulse{50%{transform:scale(1.1);opacity:0}}
+.mic-label{font-size:14px;font-weight:800;color:#344caa}.mic-label.on{color:#c83a58}
+.status{min-height:25px;display:flex;justify-content:center;align-items:center;text-align:center;gap:7px;font-size:12px;color:#65748e}.status.working{color:#c23551;font-weight:700}.status.warn{color:#a06319}.small-dot{width:8px;height:8px;border-radius:50%;background:#a7b3cc;flex-shrink:0}.status.working .small-dot{background:#da3b58}
+.hint{font-size:12px;color:#566886;text-align:center;margin:0 0 6px}
+.editor-head{display:flex;align-items:center;justify-content:space-between;margin-top:13px;gap:10px;font-size:13px;font-weight:800}.editor-head small{font-size:11px;color:#64718a;font-weight:500}
+textarea{width:100%;min-height:165px;resize:vertical;margin:9px 0 3px;border:1.5px solid #adbde0;background:#fcfdff;border-radius:13px;padding:14px;font-size:17px;color:#1a2e56;line-height:1.65;outline:none}textarea:focus{border-color:#4f60ce}textarea:disabled{background:#f3f5fa;color:#1d3157}
+.row{display:flex;gap:9px;flex-wrap:wrap}.row>*{flex:1;min-width:104px}.btn{padding:12px 11px;border-radius:11px;border:1px solid #ccd5ea;background:white;font-weight:750;color:#344b97}.btn.primary{background:#3d4ec5;color:#fff;border-color:#3d4ec5}.btn.light{background:#eef1ff;border-color:#dde3ff}.btn:disabled{opacity:.46;cursor:not-allowed}
+.actions{margin-top:13px}.details{color:#69778f;font-size:11px;margin-top:12px}.details strong{color:#4e5d80}
+.tabbar{display:flex;gap:6px;background:#eef1fc;border-radius:12px;padding:5px;margin:15px 0 1px}
+.tabbar button{flex:1;border:0;border-radius:9px;padding:11px;background:transparent;color:#687794;font-weight:750}.tabbar button.active{background:#fff;color:#344cb3;box-shadow:0 1px 5px #1d2e5f12}
+.tab[hidden]{display:none}
+.chats{display:flex;flex-direction:column;gap:11px;margin-top:13px}.chat{margin-left:13%;padding:13px 14px;border-radius:16px 16px 3px 16px;background:#e9edff;color:#223670;white-space:pre-wrap;overflow-wrap:anywhere}.chat-time{display:block;text-align:right;font-size:10px;color:#6c7b9d;margin-top:8px}.empty{padding:30px 16px;color:#6e7c97;background:#f6f8fc;border-radius:12px;text-align:center;font-size:13px}
+.section-footer{display:flex;align-items:center;justify-content:space-between;gap:9px;margin-top:15px;padding-top:13px;border-top:1px solid #edf0f7}.section-footer button{padding:8px 12px;background:#fff;border:1px solid #ced6eb;border-radius:9px;color:#677691;font-size:12px;font-weight:650}
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+@media(max-width:440px){.hero{padding:20px 16px}.hero h1{font-size:23px}.panel{padding:16px}.row{gap:7px}.btn{font-size:13px}.wrap{padding-left:12px;padding-right:12px}}
+@media(prefers-reduced-motion:reduce){.mic.on:after{animation:none}}
+</style>
+</head>
+<body>
+<div class="wrap">
+ <header><div class="brand"><span class="mark">D</span><span>닥터펫 <span style="font-size:12px;color:#7685b1;font-weight:600">DoctorPet</span></span></div><span class="pill">한국어 음성→글자</span></header>
+ <section class="hero"><div class="eyebrow">보호자 → 동물병원 원장님</div><h1>말하면 글자가<br>바로 나타납니다</h1><p>녹음파일 없이 음성을 한국어 글자로 변환하고, 내용을 확인한 뒤 전달하세요.</p></section>
+ <p class="demo-note">실제 마이크 인식을 사용하는 <strong>독립 테스트 화면</strong>입니다. [전송 미리보기]는 이 브라우저에서만 보이며, 동물병원 원장님에게 실제로 보내지는 않습니다.</p>
+ <div class="tabbar" role="tablist" aria-label="화면 선택"><button class="active" id="tabGuardian" role="tab" aria-selected="true" aria-controls="guardianPanel">보호자 말하기</button><button id="tabClinic" role="tab" aria-selected="false" aria-controls="clinicPanel">원장 화면 미리보기</button></div>
+ <main>
+ <section class="tab panel" id="guardianPanel" role="tabpanel" aria-labelledby="tabGuardian">
+  <div class="meta"><strong>원장님께 보낼 내용</strong><span>녹음파일 저장 안 함</span></div>
+  <div class="mic-controls">
+    <button class="mic" type="button" id="micBtn" aria-label="말하기 시작" aria-pressed="false"><svg viewBox="0 0 24 24"><rect x="9" y="2" width="6" height="13" rx="3"/><path d="M5 10v2a7 7 0 0 0 14 0v-2M12 19v3m-5 0h10"/></svg></button>
+    <div id="micLabel" class="mic-label">마이크 누르고 말하기</div>
+    <div class="status" role="status" aria-live="polite" id="speechStatus"><span class="small-dot"></span><span id="statusText">시작 버튼을 누르면 한국어 음성인식을 실행합니다.</span></div>
+  </div>
+  <p class="hint">예: “원장님, 우리 아이가 어제부터 밥을 잘 안 먹어요.”</p>
+  <div class="editor-head"><label for="message">인식된 글자 · 직접 수정 가능</label><small><span id="charCount">0</span>자</small></div>
+  <textarea id="message" maxlength="5000" spellcheck="true" placeholder="말하면 여기에 글자가 나타납니다. 휴대폰 키보드 마이크로 직접 입력해도 됩니다."></textarea>
+  <div class="row actions"><button class="btn light" id="copyBtn" type="button">글자 복사</button><button class="btn" id="clearBtn" type="button">글자 지우기</button></div>
+  <div class="row actions"><button class="btn primary" id="sendBtn" type="button">원장 화면에 보내기 · 데모</button><button class="btn" id="shareBtn" type="button">휴대폰 공유</button></div>
+  <div class="details" id="draftStatus">작성한 글은 이 브라우저에 자동 임시저장됩니다.</div>
+  <div class="details">브라우저가 음성인식을 조기에 종료할 수 있습니다. 앱이 인식기를 자동 재시작하거나 알림음을 재생하지는 않습니다. 갤럭시에서 끊기면 <strong>입력창의 삼성·Gboard 키보드 마이크</strong>를 이용할 수 있습니다.</div>
+ </section>
+ <section class="tab panel" id="clinicPanel" role="tabpanel" aria-labelledby="tabClinic" hidden>
+  <h2>원장님 화면 미리보기</h2>
+  <p class="sub">보호자 입력이 어떻게 보이는지 확인하는 같은 기기 테스트입니다. 실제 원장 기기에 전송되지 않습니다.</p>
+  <div class="chats" id="chatMessages"></div>
+  <div class="section-footer"><span class="sub" style="margin:0">이 기기에만 저장됨</span><button type="button" id="clearDemoBtn">미리보기 기록 삭제</button></div>
+ </section>
+ </main>
+ <div class="section-footer" style="margin-top:16px;padding:15px 1px"><span class="sub" style="margin:0">마이크는 사용자 동의 후 실행 · 녹음 저장 없음</span><button type="button" id="deleteLocalBtn">이 기기의 초안 삭제</button></div>
+</div>
+<script>
+(()=>{'use strict';
+  const $=id=>document.getElementById(id);
+  const STORAGE_DRAFT='doctorpet:guardian:dictation:draft:v1';
+  const STORAGE_PREVIEW='doctorpet:guardian:dictation:preview:v1';
+  const SpeechAPI=window.SpeechRecognition||window.webkitSpeechRecognition;
+  const editor=$('message');
+  let recognizer=null, isListening=false, stopRequested=false, sessionBase='', liveSegments=[], lastError='';
+  const safeGet=(key,fallback)=>{try{return localStorage.getItem(key)||fallback}catch{return fallback}};
+  const safeSet=(key,val)=>{try{localStorage.setItem(key,val);return true}catch{$('draftStatus').textContent='브라우저 저장소를 사용할 수 없어 현재 화면에서만 보관됩니다.';return false}};
+  let preview=[];
+  try{const parsed=JSON.parse(safeGet(STORAGE_PREVIEW,'[]'));if(Array.isArray(parsed))preview=parsed.filter(x=>x&&typeof x.text==='string').slice(-50)}catch{}
+  function saveDraft(){safeSet(STORAGE_DRAFT,editor.value);$('charCount').textContent=editor.value.length}
+  function updateStatus(text,kind=''){ $('statusText').textContent=text;$('speechStatus').className='status'+(kind?' '+kind:'') }
+  function showTab(which){const guard=which==='guardian';$('guardianPanel').hidden=!guard;$('clinicPanel').hidden=guard;$('tabGuardian').classList.toggle('active',guard);$('tabClinic').classList.toggle('active',!guard);$('tabGuardian').setAttribute('aria-selected',String(guard));$('tabClinic').setAttribute('aria-selected',String(!guard));if(!guard)renderPreview();}
+  function join(base,part){const b=base.trimEnd(),p=part.trim();if(!p)return b;return b?b+' '+p:p}
+  function applySegments(){const phrase=liveSegments.map(x=>x.text.trim()).filter(Boolean).join(' ');const text=join(sessionBase,phrase);editor.value=text.slice(0,5000);saveDraft();}
+  function resetSession(){stopRequested=false;lastError='';sessionBase=editor.value;liveSegments=[];}
+  function setMic(on){isListening=on;$('micBtn').classList.toggle('on',on);$('micBtn').setAttribute('aria-pressed',String(on));$('micBtn').setAttribute('aria-label',on?'말하기 종료':'말하기 시작');$('micLabel').textContent=on?'듣는 중 · 다시 누르면 종료':'마이크 누르고 말하기';$('micLabel').classList.toggle('on',on);editor.disabled=on;}
+  function stopListening(){if(!recognizer)return;stopRequested=true;updateStatus('인식을 마무리하고 있습니다…');try{recognizer.stop()}catch{try{recognizer.abort()}catch{}}}
+  function startListening(){
+    if(isListening){stopListening();return;}
+    if(!SpeechAPI){updateStatus('이 브라우저는 웹 음성인식을 지원하지 않습니다. 입력창을 눌러 휴대폰 키보드 마이크를 사용해 주세요.','warn');editor.focus();return;}
+    if(!window.isSecureContext){updateStatus('마이크 사용에는 HTTPS 주소가 필요합니다.','warn');return;}
+    resetSession();
+    let r;try{r=new SpeechAPI();r.lang='ko-KR';r.continuous=true;r.interimResults=true;r.maxAlternatives=1;}catch{updateStatus('음성인식을 시작하지 못했습니다.','warn');return;}
+    recognizer=r;
+    r.onstart=()=>{if(recognizer!==r)return;setMic(true);updateStatus('듣고 있어요. 말씀하세요. (기기가 종료하면 글자는 남습니다)','working')};
+    r.onresult=e=>{if(recognizer!==r)return;liveSegments=Array.from(e.results,x=>({text:String(x[0]?.transcript??''),isFinal:Boolean(x.isFinal)}));applySegments();updateStatus(liveSegments.some(x=>!x.isFinal)?'실시간 글자 변환 중…':'말씀을 인식했습니다. 이어서 말해 보세요.','working')};
+    r.onerror=e=>{if(recognizer!==r)return;const error=e?.error||'unknown';lastError=error;const msg={"not-allowed":'마이크 권한이 꺼져 있습니다. 브라우저 권한을 허용해 주세요.',"service-not-allowed":'기기 음성인식 서비스를 사용할 수 없습니다.',"no-speech":'음성이 감지되지 않아 인식이 종료됐습니다.',network:'음성인식 네트워크 오류가 발생했습니다.'}[error]||'음성인식이 종료됐습니다 ('+error+').';updateStatus(msg,'warn')};
+    r.onend=()=>{if(recognizer!==r)return;applySegments();recognizer=null;setMic(false);updateStatus(stopRequested?'듣기를 종료했어요. 글자를 확인하고 보내세요.':lastError?'현재 글자는 보존했어요. 필요하면 키보드 마이크로 이어 말해 주세요.':'기기에서 듣기를 종료했어요. 내용은 남아 있어요. 이어서 입력할 수 있습니다.',lastError?'warn':'')};
+    try{r.start();updateStatus('마이크 권한을 확인하는 중…')}catch{recognizer=null;setMic(false);updateStatus('인식을 시작하지 못했습니다. 기기 키보드 마이크를 이용해 주세요.','warn')}
+  }
+  function renderPreview(){const root=$('chatMessages');root.replaceChildren();if(!preview.length){const e=document.createElement('div');e.className='empty';e.textContent='아직 전송 미리보기 기록이 없습니다.';root.append(e);return;}
+    for(const item of preview){const wrap=document.createElement('div');wrap.className='chat';wrap.textContent=item.text;const meta=document.createElement('span');meta.className='chat-time';const stamp=new Date(item.at);meta.textContent='보호자 · '+(isNaN(stamp.getTime())?'':stamp.toLocaleString('ko-KR'));wrap.append(meta);root.append(wrap);}
+  }
+  function sendPreview(){if(isListening){stopListening();updateStatus('음성인식 종료 후 [보내기]를 한 번 더 눌러 주세요.');return;}
+    const value=editor.value.trim();if(!value){updateStatus('보낼 글자를 먼저 입력해 주세요.','warn');return;}
+    preview.push({text:value,at:new Date().toISOString()});preview=preview.slice(-50);safeSet(STORAGE_PREVIEW,JSON.stringify(preview));editor.value='';saveDraft();showTab('clinic');}
+  async function copyText(){const value=editor.value.trim();if(!value){updateStatus('복사할 글자가 없습니다.','warn');return;}
+    try{await navigator.clipboard.writeText(value);updateStatus('글자를 복사했습니다.')}catch{editor.focus();editor.select();updateStatus('글자를 선택했습니다. 복사를 눌러 주세요.','warn');}}
+  async function shareText(){const value=editor.value.trim();if(!value){updateStatus('공유할 글자가 없습니다.','warn');return;}
+    if(navigator.share){try{await navigator.share({title:'닥터펫 보호자 문의',text:value});updateStatus('휴대폰 공유 화면이 종료되었습니다. 실제 발송 여부는 선택한 앱에서 확인하세요.');return}catch(e){if(e?.name==='AbortError')return}}
+    await copyText();updateStatus('공유 기능이 지원되지 않아 글자 복사를 시도했습니다.','warn');}
+  $('micBtn').addEventListener('click',startListening);
+  $('message').addEventListener('input',()=>{if(isListening)return;saveDraft()});
+  $('tabGuardian').addEventListener('click',()=>showTab('guardian'));
+  $('tabClinic').addEventListener('click',()=>showTab('clinic'));
+  $('copyBtn').addEventListener('click',copyText);
+  $('shareBtn').addEventListener('click',shareText);
+  $('sendBtn').addEventListener('click',sendPreview);
+  $('clearBtn').addEventListener('click',()=>{if(isListening)stopListening();editor.value='';sessionBase='';liveSegments=[];saveDraft();updateStatus('글자를 지웠습니다.')});
+  $('clearDemoBtn').addEventListener('click',()=>{if(!confirm('이 기기의 전송 미리보기 기록을 삭제할까요?'))return;preview=[];try{localStorage.removeItem(STORAGE_PREVIEW)}catch{}renderPreview()});
+  $('deleteLocalBtn').addEventListener('click',()=>{if(!confirm('이 기기에 자동 저장된 초안을 삭제할까요?'))return;if(isListening)stopListening();editor.value='';sessionBase='';liveSegments=[];try{localStorage.removeItem(STORAGE_DRAFT)}catch{}saveDraft();updateStatus('로컬 초안을 지웠습니다.')});
+  window.addEventListener('pagehide',()=>{if(recognizer){stopRequested=true;try{recognizer.abort()}catch{}}});
+  editor.value=safeGet(STORAGE_DRAFT,'').slice(0,5000);$('charCount').textContent=editor.value.length;
+  if(!SpeechAPI)updateStatus('웹 음성인식 미지원 브라우저입니다. 휴대폰 키보드 마이크로 입력해 주세요.','warn');
+})();
+</script>
+</body>
+</html>
