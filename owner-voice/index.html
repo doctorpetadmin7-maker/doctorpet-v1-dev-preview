@@ -66,6 +66,32 @@
     .pill {background:#eef1ff;color:#3441a7;border-radius:5px;padding:2px 7px;}
     .trash {min-height:35px;padding:5px 7px;background:transparent;color:#7e8aa0;border:1px solid transparent;font-size:12px;}
     .empty {border:1px dashed #bdc7e4;border-radius:12px;text-align:center;padding:25px 15px;color:#72809a;font-size:13px;}
+
+    .listen-meter{display:flex;align-items:center;gap:10px;margin:-3px 0 13px;color:#4d5f85;font-size:12px}
+    .listen-track{background:#e1e7fa;flex:1;height:6px;border-radius:40px;overflow:hidden}
+    .listen-bar{height:100%;background:#3d5bd8;width:0%;border-radius:40px;transition:width .2s linear}
+    #quietRemaining{min-width:95px;text-align:right;font-variant-numeric:tabular-nums}
+    .calendar-head{display:flex;align-items:center;justify-content:center;gap:12px;margin:9px 0 13px}
+    .calendar-head strong{font-size:18px;min-width:122px;text-align:center}
+    .calendar-head button{min-width:38px;padding:5px 9px;min-height:36px}
+    .calendar-weekdays,.calendar-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px}
+    .calendar-weekdays{margin-bottom:5px;text-align:center;color:#64718c;font-size:12px}
+    .calendar-weekdays span:first-child{color:#b83e52}
+    .calendar-grid button{min-height:61px;border:1px solid #e0e5f4;padding:6px 2px;border-radius:9px;background:#f9faff;display:flex;flex-direction:column;gap:2px;align-items:center;font-weight:550;color:#24375e}
+    .calendar-grid button.other{opacity:.38}
+    .calendar-grid button.selected{background:#e8ebff;border:2px solid #4a54cb;padding:5px 1px}
+    .calendar-grid button.today{box-shadow:inset 0 0 0 1px #788be3}
+    .calendar-grid button.has-task{background:#f0f1ff}
+    .calendar-num{font-size:12px;font-weight:700}
+    .calendar-chip{display:block;max-width:100%;background:#3c4bb4;color:white;border-radius:8px;padding:1px 5px;font-size:10px;line-height:16px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .calendar-day-detail{border-top:1px solid #e3e7f3;margin-top:13px;padding-top:10px}
+    .calendar-day-detail h3{font-size:14px;margin:0}
+    .calendar-day-detail .section-head button{min-height:32px;padding:4px 7px;font-size:11px}
+    .calendar-day-task{display:flex;justify-content:space-between;gap:8px;padding:7px 3px;border-bottom:1px solid #edf0f8;font-size:13px}
+    .calendar-day-task span{color:#66738b;font-size:12px;white-space:nowrap}
+    .calendar-actions{display:flex;flex-direction:column;gap:7px;margin-top:11px}
+    .calendar-actions button{align-self:flex-start;min-height:35px;padding:6px 10px;font-size:12px}
+  
     .foot {font-size:12px;line-height:1.6;color:#707c95;padding:15px 2px;}
     .foot strong{color:#424e6b;}
     .sr-only {position:absolute;left:-9999px;}
@@ -86,13 +112,14 @@
         <button type="button" id="micButton" class="primary mic" aria-pressed="false" title="마이크로 업무 말하기">
           <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="2" width="6" height="12" rx="3"></rect><path d="M5 10a7 7 0 0 0 14 0M12 17v5m-5 0h10"></path></svg><span id="micLabel">말하기 시작</span>
         </button>
-        <span id="voiceNotice" class="voice-state">누르고 천천히 말하세요. 멈춤 버튼을 누를 때까지 계속 듣습니다.</span>
+        <span id="voiceNotice" class="voice-state">말하는 동안 계속 듣고, 말이 멈추면 10초 대기합니다.</span>
       </div>
+      <div class="listen-meter" aria-live="off"><div class="listen-track"><div id="listenBar" class="listen-bar"></div></div><span id="quietRemaining">마이크를 누르면 시작</span></div>
       <div class="speech-wrap">
         <label for="speech" class="sr-only">음성 변환 내용 또는 직접 입력</label>
         <textarea id="speech" placeholder="예: 내일 오후 3시 보호자 전화하기&#10;마이크가 안 되면 직접 입력하거나 휴대폰 키보드의 🎤를 이용하세요."></textarea>
       </div>
-      <div class="assist"><span class="small" id="voiceHelp">말하는 동안 글자가 올라옵니다. 종료 후 수정할 수 있어요.</span><button id="clearText" class="outline" type="button" style="min-height:32px;padding:5px 10px;font-size:12px">입력 지우기</button></div>
+      <div class="assist"><span class="small" id="voiceHelp">말하는 동안 글자가 표시됩니다. 말이 끝나도 10초 동안 기다리며, 소리는 재생하지 않습니다.</span><button id="clearText" class="outline" type="button" style="min-height:32px;padding:5px 10px;font-size:12px">입력 지우기</button></div>
       <div class="chips" aria-label="빠른 예시">
         <button class="chip" type="button" data-example="내일 오후 3시 보호자 전화하기">내일 3시 보호자 전화</button>
         <button class="chip" type="button" data-example="오늘 오후 5시 병원 재고 확인">오늘 5시 재고 확인</button>
@@ -104,8 +131,16 @@
         <label>예정 일시 <input id="dueInput" type="datetime-local" /></label>
       </div>
       <div id="preview" class="preview" aria-live="polite">말하거나 예시를 누르면 업무가 자동 정리됩니다.</div>
-      <div class="actions"><button type="button" class="primary" id="saveButton">✓ 내 업무에 등록</button><button type="button" class="outline" id="cancelEdit" hidden>수정 취소</button></div>
+      <div class="actions"><button type="button" class="primary" id="saveButton">✓ 일정·업무 추가</button><button type="button" class="outline" id="cancelEdit" hidden>수정 취소</button></div>
       <div class="feedback" id="feedback" role="status" aria-live="polite"></div>
+    </section>
+    <section class="panel" id="calendarPanel" aria-label="나의 업무 월간 달력">
+      <div class="section-head"><h2>🗓 월간 업무 캘린더</h2><span class="count" id="calendarCount">0건</span></div>
+      <div class="calendar-head"><button type="button" id="prevMonth" class="outline" aria-label="이전 달">〈</button><strong id="calendarMonth"></strong><button type="button" id="nextMonth" class="outline" aria-label="다음 달">〉</button><button type="button" id="goToday" class="outline">이번 달</button></div>
+      <div class="calendar-weekdays"><span>일</span><span>월</span><span>화</span><span>수</span><span>목</span><span>금</span><span>토</span></div>
+      <div class="calendar-grid" id="calendarGrid" aria-label="날짜별 업무 현황"></div>
+      <div class="calendar-day-detail"><div class="section-head"><h3 id="selectedDateLabel">선택한 날짜</h3><button class="outline" id="addOnDate" type="button">+ 이 날짜에 업무 추가</button></div><div id="selectedDayTasks"></div></div>
+      <div class="calendar-actions"><button type="button" class="outline" id="exportIcs">휴대폰 캘린더로 옮기기 (.ics)</button><span class="small">일정 추가 시 위 달력에는 즉시 표시됩니다. 휴대폰 일정 앱에는 .ics 파일을 열어 가져오세요.</span></div>
     </section>
     <section class="panel" aria-label="저장된 업무">
       <div class="section-head"><h2>📋 내 업무 목록</h2><span class="count" id="countBadge">0건</span></div>
@@ -114,7 +149,7 @@
       <input type="file" id="importFile" accept="application/json,.json" hidden />
       <div class="tasks" id="tasks"></div>
     </section>
-    <div class="foot"><strong>이용 안내</strong> · 서버 저장 없이 현재 기기의 업무를 실제로 저장·관리합니다. 한국어 음성인식은 브라우저에서 지원할 때 동작합니다. 일부 브라우저는 음성 인식에 온라인 서비스를 사용합니다. 일정·업무는 계정 또는 로컬 브라우저별 localStorage에만 저장되며 다른 기기로 자동 전송되지 않습니다. 개인정보·실제 진료정보 대신 시험용 내용을 사용해 주세요. 브라우저 데이터 삭제 시 기록이 없어질 수 있으므로 필요하면 [기록 백업]을 사용하세요.</div>
+    <div class="foot"><strong>이용 안내</strong> · 이 기기에 업무를 저장하고 월간 캘린더에 자동 등록합니다. 휴대폰 기본 일정 앱은 .ics 파일을 직접 가져와야 합니다. 서버 저장 없이 현재 기기에서 실제로 관리합니다. 한국어 음성인식은 브라우저에서 지원할 때 동작합니다. 일부 브라우저는 음성 인식에 온라인 서비스를 사용합니다. 일정·업무는 계정 또는 로컬 브라우저별 localStorage에만 저장되며 다른 기기로 자동 전송되지 않습니다. 개인정보·실제 진료정보 대신 시험용 내용을 사용해 주세요. 브라우저 데이터 삭제 시 기록이 없어질 수 있으므로 필요하면 [기록 백업]을 사용하세요.</div>
   </main>
 <script>
 (() => {
@@ -134,6 +169,15 @@
   let filter='all';
   let editingId=null;
   let recognition=null;
+  const SILENCE_MS=10000;
+  let quietTicker=null;
+  let lastActivity=0;
+  let speechInProgress=false;
+  let latestResultCount=0;
+  let ignoredResultCount=0;
+  let recentSegment={text:'',at:0};
+  let calendarMonth=new Date();calendarMonth.setDate(1);calendarMonth.setHours(0,0,0,0);
+  let selectedDay=new Date();selectedDay.setHours(0,0,0,0);
   let listening=false;
   let attempted=false;
   let committed='';
@@ -161,55 +205,87 @@
   function validTask(t){return !!t && typeof t.id==='string' && typeof t.title==='string' && t.title.length<=200;}
   function loadTasks(){const data=getStored(KEY,[]);tasks=Array.isArray(data)?data.filter(validTask).slice(0,500):[];}
   function addDays(date,days){const d=new Date(date);d.setDate(d.getDate()+days);return d;}
+  function ymd(d){return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;}
+  function parseKoreanNumber(input){
+    if(/^\d+$/.test(input))return Number(input);
+    const units={영:0,공:0,한:1,하나:1,두:2,둘:2,세:3,셋:3,네:4,넷:4,다섯:5,여섯:6,일곱:7,여덟:8,아홉:9,열:10,열한:11,열두:12,열세:13,열네:14,열다섯:15,열여섯:16,열일곱:17,열여덟:18,열아홉:19,스무:20,스물:20,스물한:21,스물두:22,스물세:23,스물네:24,서른:30,마흔:40,쉰:50,일:1,이:2,삼:3,사:4,오:5,육:6,칠:7,팔:8,구:9,십:10,이십:20,삼십:30,사십:40,오십:50};
+    if(Object.hasOwn(units,input))return units[input];
+    const tens=input.match(/^(스물|서른|마흔|쉰)(한|두|세|네|다섯|여섯|일곱|여덟|아홉)$/);
+    if(tens)return units[tens[1]]+units[tens[2]];
+    const sino=input.match(/^(이십|삼십|사십|오십|십)(일|이|삼|사|오|육|칠|팔|구)$/);
+    if(sino)return units[sino[1]]+units[sino[2]];
+    return null;
+  }
+  const timeWords='\\d{1,2}|열아홉|열여덟|열일곱|열여섯|열다섯|열네|열세|열두|열한|열|아홉|여덟|일곱|여섯|다섯|네|세|두|한|스물한|스물두|스물세|스물네|스물|서른|마흔|쉰|이십|삼십|십';
   function parseCommand(text){
     const raw=String(text||'').replace(/\s+/g,' ').trim();
-    if(!raw) return {title:'',category:'일반 업무',due:null,dateLabel:'일정 미지정'};
-    const now=todayLocal();let due=null,base=null;
-    let m = raw.match(/(20\d\d)[-./년 ]+\s*(\d{1,2})[-./월 ]+\s*(\d{1,2})\s*일?/);
-    if(m){base=new Date(+m[1],+m[2]-1,+m[3]);}
+    if(!raw)return {title:'',category:'일반 업무',due:null,dateLabel:'일정 미지정',hadDate:false};
+    const now=todayLocal();let base=null,due=null;
+    const explicit=raw.match(/(20\d{2})\s*(?:년|[-./])\s*(\d{1,2})\s*(?:월|[-./])\s*(\d{1,2})\s*일?/);
+    const monthDay=raw.match(/(\d{1,2})\s*(?:월|\/)\s*(\d{1,2})\s*일?/);
+    const dayOnly=raw.match(/(?:^|\s)(\d{1,2})\s*일(?:\s|$)/);
+    let dateFound=false;
+    function checkedDate(y,m,d){const v=new Date(y,m-1,d);return v.getFullYear()===y&&v.getMonth()+1===m&&v.getDate()===d?v:null;}
+    if(explicit){dateFound=true;base=checkedDate(+explicit[1],+explicit[2],+explicit[3]);}
+    else if(monthDay){dateFound=true;base=checkedDate(now.getFullYear(),+monthDay[1],+monthDay[2]);if(base&&base<new Date(now.getFullYear(),now.getMonth(),now.getDate()))base=checkedDate(now.getFullYear()+1,+monthDay[1],+monthDay[2]);}
+    else if(/글피/.test(raw)){dateFound=true;base=addDays(now,3);}
+    else if(/모레/.test(raw)){dateFound=true;base=addDays(now,2);}
+    else if(/내일/.test(raw)){dateFound=true;base=addDays(now,1);}
+    else if(/오늘/.test(raw)){dateFound=true;base=addDays(now,0);}
     else {
-      m=raw.match(/(\d{1,2})\s*월\s*(\d{1,2})\s*일/);
-      if(m){base=new Date(now.getFullYear(),+m[1]-1,+m[2]);if(base.getTime()<new Date(now.getFullYear(),now.getMonth(),now.getDate()).getTime()) base.setFullYear(base.getFullYear()+1);}
-      else if(/모레/.test(raw)) base=addDays(now,2);
-      else if(/내일/.test(raw)) base=addDays(now,1);
-      else if(/오늘/.test(raw)) base=addDays(now,0);
-      else {
-        m=raw.match(/(다음\s*주|이번\s*주)?\s*(일|월|화|수|목|금|토)요일/);
-        if(m){const target=weekdays.indexOf(m[2]);let days=(target-now.getDay()+7)%7;
-          if(m[1]&&m[1].replace(/\s+/g,'')==='다음주'){const monday=(8-now.getDay())%7||7;days=monday+(target===0?6:target-1);}
-          else if(!days) days=7;
-          base=addDays(now,days);
-        }
-      }
+      const weekday=raw.match(/(다음\s*주|이번\s*주|다다음\s*주)?\s*(일|월|화|수|목|금|토)요일/);
+      if(weekday){dateFound=true;const target=weekdays.indexOf(weekday[2]);let days=(target-now.getDay()+7)%7;
+        const mod=(weekday[1]||'').replace(/\s/g,'');
+        if(mod==='다음주'||mod==='다다음주'){
+          const monday=(8-now.getDay())%7||7;
+          days=monday+(target===0?6:target-1)+(mod==='다다음주'?7:0);
+        } else if(!days)days=7;
+        base=addDays(now,days);
+      }else if(dayOnly){dateFound=true;base=checkedDate(now.getFullYear(),now.getMonth()+1,+dayOnly[1]);if(base&&base<new Date(now.getFullYear(),now.getMonth(),now.getDate())){base=checkedDate(now.getFullYear(),now.getMonth()+2,+dayOnly[1]);}}
     }
-    const tm=raw.match(/(오전|오후|새벽|밤)?\s*(\d{1,2})\s*시\s*(?:(\d{1,2})\s*분|(반))?/);
-    if(base || tm){ if(!base) base=now;
-      let hour=tm?Number(tm[2]):9;
-      const min=tm?(tm[4]?30:Number(tm[3]||0)):0;
-      const period=tm?.[1]||'';
-      if(/오후|밤/.test(period)&&hour<12)hour+=12;
-      if(/오전|새벽/.test(period)&&hour===12)hour=0;
-      if(hour<=23&&min<=59){due=new Date(base.getFullYear(),base.getMonth(),base.getDate(),hour,min);if(!isFinite(due.getTime()))due=null;}
-      if(!m && tm && !/오늘|내일|모레|요일|\d+월\s*\d+일/.test(raw) && due && due<now)due=addDays(due,1);
-    }
-    let cleaned=raw
-      .replace(/(20\d\d)[-./년 ]+\s*\d{1,2}[-./월 ]+\s*\d{1,2}\s*일?/g,' ')
-      .replace(/\d{1,2}\s*월\s*\d{1,2}\s*일/g,' ')
-      .replace(/(다음\s*주|이번\s*주)?\s*(일|월|화|수|목|금|토)요일/g,' ')
-      .replace(/오늘|내일|모레/g,' ')
-      .replace(/(오전|오후|새벽|밤)?\s*\d{1,2}\s*시\s*(?:(\d{1,2})\s*분|(반))?/g,' ')
+    const timeReg=new RegExp(`(오전|오후|새벽|밤|아침|저녁)?\\s*(${timeWords})\\s*시(?:\\s*(${timeWords})\\s*분|\\s*(반))?`);
+    let tm=raw.match(timeReg);
+    const colonTime=raw.match(/(?:^|\s)(오전|오후)?\s*(\d{1,2}):(\d{2})(?:\s|$)/);
+    let hour=null,minute=0;
+    if(tm){hour=parseKoreanNumber(tm[2]);minute=tm[4]?30:tm[3]?parseKoreanNumber(tm[3]):0;
+      const period=tm[1]||'';
+      if(hour!=null&&/오후|밤|저녁/.test(period)&&hour<12)hour+=12;
+      if(hour!=null&&/오전|새벽|아침/.test(period)&&hour===12)hour=0;
+    }else if(colonTime){hour=+colonTime[2];minute=+colonTime[3];
+      if(colonTime[1]==='오후'&&hour<12)hour+=12;
+      if(colonTime[1]==='오전'&&hour===12)hour=0;
+    }else if(/정오/.test(raw)){hour=12;}else if(/자정/.test(raw)){hour=0;}
+    const hasTime=tm!==null||colonTime!==null||/정오|자정/.test(raw);
+    if((base||hasTime)&&hour!=null&&hour>=0&&hour<=23&&minute!=null&&minute>=0&&minute<=59){
+      if(!base)base=now;
+      due=new Date(base.getFullYear(),base.getMonth(),base.getDate(),hour,minute);
+      if(!dateFound&&due<now)due=addDays(due,1);
+    }else if(base&&!hasTime){due=new Date(base.getFullYear(),base.getMonth(),base.getDate(),9,0);}
+    const cleaned=raw
+      .replace(/20\d{2}\s*(?:년|[-./])\s*\d{1,2}\s*(?:월|[-./])\s*\d{1,2}\s*일?/g,' ')
+      .replace(/\d{1,2}\s*(?:월|\/)\s*\d{1,2}\s*일?/g,' ')
+      .replace(/(다다음\s*주|다음\s*주|이번\s*주)?\s*(일|월|화|수|목|금|토)요일/g,' ')
+      .replace(/오늘|내일|모레|글피/g,' ')
+      .replace(/(?:^|\s)\d{1,2}\s*일(?=\s|$)/g,' ')
+      .replace(timeReg,' ').replace(/(?:^|\s)(오전|오후)?\s*\d{1,2}:\d{2}(?=\s|$)/g,' ')
+      .replace(/정오|자정/g,' ')
       .replace(/(?:메모|일정|할\s*일)\s*(?:등록|추가|해줘|해\s*줘)?/g,' ')
       .replace(/(기억해\s*줘|잡아\s*줘|등록해\s*줘|부탁해|예정이야|해야\s*해요?|할\s*것|해\s*줘|좀)/g,' ')
       .replace(/\s+/g,' ').replace(/^[,.:\s]+|[,.:\s]+$/g,'').trim();
-    if(!cleaned)cleaned=raw;
+    const title=cleaned||raw;
     let category='일반 업무';
-    if(/전화|연락|상담|문자|안내|보호자/.test(cleaned))category='보호자 응대';
-    else if(/재진|진료|수술|검사|접종|처방/.test(cleaned))category='진료 일정';
-    else if(/회의|미팅|교육|세미나/.test(cleaned))category='회의·교육';
-    else if(/재고|발주|납품|정산|매출|직원|근무|청소|마감/.test(cleaned))category='병원 운영';
-    return {title:cleaned,category,due:due?toLocalInput(due):null,dateLabel:due?due.toLocaleString('ko-KR',{month:'short',day:'numeric',weekday:'short',hour:'numeric',minute:'2-digit'}):'일정 미지정'};
+    if(/전화|연락|상담|문자|안내|보호자/.test(title))category='보호자 응대';
+    else if(/재진|진료|수술|검사|접종|처방/.test(title))category='진료 일정';
+    else if(/회의|미팅|교육|세미나/.test(title))category='회의·교육';
+    else if(/재고|발주|납품|정산|매출|직원|근무|청소|마감/.test(title))category='병원 운영';
+    return {title,category,due:due?toLocalInput(due):null,dateLabel:due?due.toLocaleString('ko-KR',{month:'short',day:'numeric',weekday:'short',hour:'numeric',minute:'2-digit'}):'일정 미지정',hadDate:dateFound||hasTime};
   }
-  function onSpeechChange(auto=true){const value=$('speech').value;const parsed=parseCommand(value);
+  function splitSpeechItems(text){
+    const value=String(text||'').trim();if(!value)return [];
+    return value.replace(/(?:[.,。]\s*|\s+)(?:그리고|그\s*다음|그다음|또(?:한)?|다음으로)\s*(?=(?:오늘|내일|모레|글피|이번\s*주|다음\s*주|다다음\s*주|\d{1,2}\s*월|\d{1,2}\s*일|오전|오후))/g,'\n')
+      .split(/\n+/).map(x=>x.trim()).filter(Boolean).slice(0,20);
+  }
+  function onSpeechChange(auto=true){const value=$('speech').value;const pieces=splitSpeechItems(value);const parsed=parseCommand(pieces[0]||value);
     if(auto){$('titleInput').value=parsed.title;$('categoryInput').value=parsed.category;$('dueInput').value=parsed.due||'';}
     renderPreview();saveDraft();
   }
@@ -221,11 +297,48 @@
     $('preview').append(strong,body);
   }
   function feedback(msg,err=false){$('feedback').textContent=msg;$('feedback').style.color=err?'#bd3444':'#167c61';}
-  function clearEditor(){ $('speech').value='';$('titleInput').value='';$('dueInput').value='';$('categoryInput').value='';editingId=null;$('saveButton').textContent='✓ 내 업무에 등록';$('cancelEdit').hidden=true;renderPreview();saveDraft();}
+  function clearEditor(){ $('speech').value='';$('titleInput').value='';$('dueInput').value='';$('categoryInput').value='';editingId=null;$('saveButton').textContent='✓ 일정·업무 추가';$('cancelEdit').hidden=true;renderPreview();saveDraft();}
   function formatDate(value){if(!value)return '일정 미지정';const d=new Date(value);if(isNaN(d.getTime()))return '일정 미지정';return d.toLocaleString('ko-KR',{month:'short',day:'numeric',weekday:'short',hour:'numeric',minute:'2-digit'});}
+  function dateAtMonthOffset(delta){calendarMonth.setMonth(calendarMonth.getMonth()+delta);}
+  function changeCalendarDate(value){const date=new Date(value+'T00:00:00');if(!Number.isFinite(date.getTime()))return;selectedDay=date;renderCalendar();}
+  function renderCalendar(){
+    const monthStart=new Date(calendarMonth.getFullYear(),calendarMonth.getMonth(),1);
+    const monthEnd=new Date(calendarMonth.getFullYear(),calendarMonth.getMonth()+1,1);
+    const monthTasks=tasks.filter(t=>t.due&&new Date(t.due)>=monthStart&&new Date(t.due)<monthEnd);
+    $('calendarMonth').textContent=`${calendarMonth.getFullYear()}년 ${calendarMonth.getMonth()+1}월`;
+    $('calendarCount').textContent=`이번 달 ${monthTasks.length}건`;
+    const firstWeekday=monthStart.getDay();const days=new Date(calendarMonth.getFullYear(),calendarMonth.getMonth()+1,0).getDate();
+    const grid=$('calendarGrid');grid.replaceChildren();
+    for(let i=0;i<Math.ceil((firstWeekday+days)/7)*7;i++){
+      const dt=new Date(calendarMonth.getFullYear(),calendarMonth.getMonth(),1+i-firstWeekday);
+      const id=ymd(dt);const today=ymd(new Date());const mine=tasks.filter(t=>t.due?.startsWith(id));
+      const b=document.createElement('button');b.type='button';b.className=[dt.getMonth()!==calendarMonth.getMonth()?'other':'',id===ymd(selectedDay)?'selected':'',id===today?'today':'',mine.length?'has-task':''].filter(Boolean).join(' ');
+      b.setAttribute('aria-label',`${id} 업무 ${mine.length}건`);
+      const date=document.createElement('span');date.className='calendar-num';date.textContent=dt.getDate();b.append(date);
+      if(mine.length){const tag=document.createElement('span');tag.className='calendar-chip';tag.textContent=mine.length===1?mine[0].title:`${mine.length}개 업무`;b.append(tag);}
+      b.onclick=()=>{selectedDay=dt;if(dt.getMonth()!==calendarMonth.getMonth())calendarMonth=new Date(dt.getFullYear(),dt.getMonth(),1);renderCalendar();};grid.append(b);
+    }
+    $('selectedDateLabel').textContent=`${selectedDay.getMonth()+1}월 ${selectedDay.getDate()}일 업무`;
+    const selected=tasks.filter(t=>t.due?.startsWith(ymd(selectedDay))).sort((a,b)=>a.due.localeCompare(b.due));
+    const detail=$('selectedDayTasks');detail.replaceChildren();
+    if(!selected.length){const label=document.createElement('div');label.className='small';label.textContent='이 날짜에 등록된 업무가 없습니다.';detail.append(label);}
+    for(const t of selected){const row=document.createElement('div');row.className='calendar-day-task';const title=document.createElement('strong');title.textContent=(t.done?'✓ ':'')+t.title;const time=document.createElement('span');time.textContent=t.due.slice(11)||'시간 미정';row.append(title,time);detail.append(row);}
+  }
+  function escapeIcs(value){return String(value||'').replaceAll('\\','\\\\').replaceAll(';','\\;').replaceAll(',','\\,').replace(/\r?\n/g,'\\n');}
+  function icsStamp(date){return date.toISOString().replace(/[-:]/g,'').replace(/\.\d{3}Z$/,'Z');}
+  function makeIcs(items){
+    const lines=['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//DoctorPet//Owner Assistant//KO','CALSCALE:GREGORIAN','X-WR-CALNAME:닥터펫 원장 업무'];
+    for(const t of items.filter(t=>t.due&&Number.isFinite(new Date(t.due).getTime()))){
+      const start=new Date(t.due),end=new Date(start.getTime()+30*60*1000);
+      lines.push('BEGIN:VEVENT','UID:'+encodeURIComponent(t.id)+'@doctorpet.local','DTSTAMP:'+icsStamp(new Date()),'DTSTART:'+icsStamp(start),'DTEND:'+icsStamp(end),'SUMMARY:'+escapeIcs(t.title),'DESCRIPTION:'+escapeIcs(t.category+' · 닥터펫 원장 개인비서'),'END:VEVENT');
+    }
+    lines.push('END:VCALENDAR');return lines.join('\r\n')+'\r\n';
+  }
+  function downloadText(text,filename,mime){const blob=new Blob([text],{type:mime});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=filename;a.click();setTimeout(()=>URL.revokeObjectURL(url),2000);}
   function render(){const rows=tasks.filter(t=>filter==='all'||(filter==='done'?!!t.done:!t.done))
     .sort((a,b)=>{if(a.done!==b.done)return Number(a.done)-Number(b.done);if(a.due&&!b.due)return -1;if(!a.due&&b.due)return 1;return a.due&&b.due?a.due.localeCompare(b.due):String(b.createdAt).localeCompare(String(a.createdAt));});
     $('countBadge').textContent=`${tasks.filter(t=>!t.done).length}건 남음`;
+    renderCalendar();
     const target=$('tasks');target.replaceChildren();
     if(!rows.length){const p=document.createElement('div');p.className='empty';p.textContent=tasks.length?'해당 상태의 업무가 없습니다.':'아직 등록한 업무가 없어요. 위에서 말하거나 예시를 눌러 등록해 보세요.';target.append(p);return;}
     for(const t of rows){
@@ -244,65 +357,106 @@
     }
   }
   function setState(text,live=false){$('stateText').textContent=text;$('stateDot').classList.toggle('live',live);$('micButton').classList.toggle('recording',live);$('micButton').setAttribute('aria-pressed',String(live));$('micLabel').textContent=live?'말하기 종료':'말하기 시작';}
+  function mergeNonRepeated(left,right){
+    const a=String(left||'').trim(),b=String(right||'').trim();if(!a)return b;if(!b)return a;
+    if(a===b||a.endsWith(b))return a;
+    const aw=a.split(/\s+/),bw=b.split(/\s+/);let matched=0;
+    for(let n=1;n<=Math.min(aw.length,bw.length,14);n++){
+      if(aw.slice(-n).join(' ')===bw.slice(0,n).join(' '))matched=n;
+    }
+    return matched?[a,...bw.slice(matched)].join(' '):a+' '+b;
+  }
+  function appendFinalSegment(text){
+    const t=String(text||'').trim();if(!t)return;
+    const now=Date.now();
+    if(recentSegment.text===t&&now-recentSegment.at<2700)return;
+    committed=mergeNonRepeated(committed,t);recentSegment={text:t,at:now};
+  }
   function renderLive(){const parts=[committed,sessionFinal,sessionInterim].map(t=>t.trim()).filter(Boolean);$('speech').value=parts.join(' ');$('speech').scrollTop=$('speech').scrollHeight;onSpeechChange();}
-  function showSpeechFallback(message){$('voiceNotice').textContent=message;$('voiceHelp').textContent='직접 입력하거나 삼성 키보드의 마이크를 눌러 말해도 됩니다.';}
+  function showSpeechFallback(message){$('voiceNotice').textContent=message;$('voiceHelp').textContent='직접 입력하거나 삼성 키보드 마이크를 눌러 말해도 됩니다.';}
+  function updateQuietMeter(){
+    if(!listening){$('quietRemaining').textContent='마이크 대기';$('listenBar').style.width='0%';return;}
+    if(speechInProgress){$('quietRemaining').textContent='말씀 중 · 듣는 중';$('listenBar').style.width='100%';return;}
+    const left=Math.max(0,SILENCE_MS-(Date.now()-lastActivity));
+    $('quietRemaining').textContent=`대기 ${(left/1000).toFixed(1)}초`;
+    $('listenBar').style.width=(100*left/SILENCE_MS)+'%';
+    if(left===0){stopSpeech();$('voiceNotice').textContent='10초 동안 말씀하지 않아 녹음을 종료했어요. 다시 말하려면 마이크를 누르세요.';}
+  }
+  function beginQuietTracking(){lastActivity=Date.now();speechInProgress=false;if(quietTicker)clearInterval(quietTicker);quietTicker=setInterval(updateQuietMeter,160);updateQuietMeter();}
+  function endQuietTracking(){if(quietTicker)clearInterval(quietTicker);quietTicker=null;$('listenBar').style.width='0%';$('quietRemaining').textContent='마이크 대기';}
+  function touchVoice(){lastActivity=Date.now();updateQuietMeter();}
   function startSpeech(){
     if(listening)return;
     const Klass=window.SpeechRecognition||window.webkitSpeechRecognition;
-    if(!Klass){showSpeechFallback('이 브라우저에서는 웹 음성인식을 지원하지 않습니다. 키보드 마이크를 이용하세요.');setState('마이크 미지원');$('speech').focus();return;}
+    if(!Klass){showSpeechFallback('이 브라우저에서 웹 음성인식을 지원하지 않습니다. 키보드 마이크를 이용하세요.');setState('마이크 미지원');$('speech').focus();return;}
     const epoch=++speechEpoch;
-    listening=true;manualStop=false;stopForError=false;attempted=false;committed=$('speech').value.trim();sessionFinal='';sessionInterim='';
-    $('speech').readOnly=true;setState('음성 듣는 중',true);$('voiceNotice').textContent='말하는 동안 글자가 보여요. 잠깐 쉬어도 계속 듣습니다. 종료는 버튼으로 하세요.';
-    bootRecognition(epoch);
+    listening=true;manualStop=false;stopForError=false;attempted=false;committed=$('speech').value.trim();sessionFinal='';sessionInterim='';ignoredResultCount=0;latestResultCount=0;
+    $('speech').readOnly=true;setState('음성 듣는 중',true);$('voiceNotice').textContent='말하는 동안 계속 듣습니다. 멈춰도 10초 동안 기다립니다. 앱 알림음은 없습니다.';
+    beginQuietTracking();bootRecognition(epoch);
   }
   function bootRecognition(epoch){
-    if(!listening || epoch!==speechEpoch)return;
+    if(!listening||epoch!==speechEpoch)return;
     const Klass=window.SpeechRecognition||window.webkitSpeechRecognition;
     if(!Klass)return;
-    sessionFinal='';sessionInterim='';attempted=false;
+    sessionFinal='';sessionInterim='';attempted=false;ignoredResultCount=0;latestResultCount=0;
     const recog=new Klass();recognition=recog;recog.lang='ko-KR';recog.continuous=true;recog.interimResults=true;recog.maxAlternatives=1;
     recog.onstart=()=>{if(epoch!==speechEpoch)return;everStarted=true;if(listening)setState('음성 듣는 중',true);};
+    recog.onspeechstart=()=>{if(epoch!==speechEpoch)return;speechInProgress=true;touchVoice();setState('말씀 듣는 중',true);};
+    recog.onspeechend=()=>{if(epoch!==speechEpoch)return;speechInProgress=false;touchVoice();setState('10초 대기 중',true);};
     recog.onresult=event=>{
-      if(epoch!==speechEpoch)return;
-      let fin='',inter='';
-      for(let i=0;i<event.results.length;i++){
-        const r=event.results[i];const v=r?.[0]?.transcript||'';
+      if(epoch!==speechEpoch||!listening)return;
+      latestResultCount=event.results.length;let fin='',inter='';
+      for(let i=ignoredResultCount;i<event.results.length;i++){
+        const r=event.results[i],v=r?.[0]?.transcript||'';
         if(r.isFinal)fin+=' '+v;else inter+=' '+v;
       }
-      sessionFinal=fin.trim();sessionInterim=inter.trim();renderLive();
+      sessionFinal=fin.trim();sessionInterim=inter.trim();
+      touchVoice();renderLive();
     };
     recog.onerror=event=>{
       if(epoch!==speechEpoch)return;
       const code=event.error||'unknown';
-      if(code==='not-allowed'||code==='service-not-allowed'||code==='audio-capture'){
-        stopForError=true;listening=false;manualStop=true;showSpeechFallback('마이크 권한이 거부되었거나 마이크를 사용할 수 없습니다. 휴대폰 설정을 확인하세요.');setState('마이크 권한 확인');
+      if(['not-allowed','service-not-allowed','audio-capture'].includes(code)){
+        stopForError=true;listening=false;manualStop=true;endQuietTracking();showSpeechFallback('마이크 사용 권한을 확인해 주세요. 입력한 글은 유지됩니다.');setState('마이크 권한 확인');
       }else if(code==='network'){
-        stopForError=true;listening=false;manualStop=true;showSpeechFallback('음성인식 연결에 문제가 있습니다. 입력한 글은 유지됩니다.');setState('연결 오류');
-      }else if(code!=='no-speech'&&code!=='aborted'){
-        $('voiceNotice').textContent='인식 연결을 다시 시도하고 있습니다. 기록은 유지됩니다.';
+        stopForError=true;listening=false;manualStop=true;endQuietTracking();showSpeechFallback('음성인식 네트워크 오류입니다. 이미 입력한 글은 유지됩니다.');setState('연결 오류');
+      }else if(!['no-speech','aborted'].includes(code)){
+        $('voiceNotice').textContent='인식 연결을 복구하고 있습니다. 기존 글은 유지됩니다.';
       }
     };
     recog.onend=()=>{
       if(epoch!==speechEpoch)return;
-      // 브라우저는 침묵 구간에서 자동 종료할 수 있다. 사용자가 누른 종료와 구분한다.
-      const lastFin=sessionFinal.trim();const lastInter=sessionInterim.trim();
-      if(lastFin)committed=[committed,lastFin].filter(Boolean).join(' ');
-      if(manualStop&&lastInter&&!lastFin.includes(lastInter))committed=[committed,lastInter].filter(Boolean).join(' ');
-      sessionFinal='';sessionInterim='';
-      renderLive();recognition=null;
-      if(listening&&!stopForError){setState('계속 듣는 중',true);retryTimeout=setTimeout(()=>{retryTimeout=null;bootRecognition(epoch);},250);}
-      else{$('speech').readOnly=false;setState(stopForError?'음성 인식 중지':'마이크 대기',false);$('voiceNotice').textContent=stopForError?'직접 입력이나 키보드 마이크로 계속 등록할 수 있어요.':'말하기가 종료됐습니다. 내용을 확인한 뒤 [내 업무에 등록]을 누르세요.';saveDraft();}
+      // 세션별 결과는 매번 전체 결과 배열이다. 이전에 저장한 인덱스는 무시한다.
+      if(sessionFinal)appendFinalSegment(sessionFinal);
+      if(manualStop&&sessionInterim&&!sessionFinal.includes(sessionInterim))appendFinalSegment(sessionInterim);
+      sessionFinal='';sessionInterim='';renderLive();recognition=null;
+      if(listening&&!stopForError&&Date.now()-lastActivity<SILENCE_MS){
+        speechInProgress=false;setState('10초 대기 · 자동 재연결',true);
+        retryTimeout=setTimeout(()=>{retryTimeout=null;bootRecognition(epoch);},260);
+      }else{
+        listening=false;speechInProgress=false;endQuietTracking();$('speech').readOnly=false;
+        setState(stopForError?'음성 인식 중지':'마이크 대기',false);
+        if(!stopForError)$('voiceNotice').textContent='음성 입력이 종료됐습니다. 계속하려면 마이크를 다시 누르세요.';
+        saveDraft();
+      }
     };
-    try{recog.start();}catch(err){recognition=null;listening=false;$('speech').readOnly=false;setState('마이크 시작 실패');showSpeechFallback('마이크를 시작하지 못했어요. 브라우저 권한·보안 연결을 확인하세요.');}
+    try{recog.start();}catch(err){recognition=null;listening=false;endQuietTracking();$('speech').readOnly=false;setState('마이크 시작 실패');showSpeechFallback('마이크 시작 실패. 브라우저 권한과 HTTPS 연결을 확인해 주세요.');}
   }
   function stopSpeech(discard=false){
     if(!listening)return;
-    manualStop=true;listening=false;
+    manualStop=true;listening=false;speechInProgress=false;endQuietTracking();
     if(retryTimeout){clearTimeout(retryTimeout);retryTimeout=null;}
     if(discard){speechEpoch++;sessionFinal='';sessionInterim='';}
     if(recognition){try{discard?recognition.abort():recognition.stop();}catch(err){}}
     if(discard||!recognition){recognition=null;$('speech').readOnly=false;setState('마이크 대기',false);}
     else setState('텍스트 확정 중');
+  }
+  function resetAfterSavingDuringSpeech(){
+    // 음성 엔진을 종료하지 않는다. 현재 세션에서 이미 전달된 결과만 제외한다.
+    committed='';sessionFinal='';sessionInterim='';ignoredResultCount=latestResultCount;
+    $('speech').value='';$('titleInput').value='';$('categoryInput').value='';$('dueInput').value='';
+    editingId=null;$('saveButton').textContent='✓ 일정·업무 추가';$('cancelEdit').hidden=true;renderPreview();saveDraft();
+    touchVoice();
   }
   $('micButton').onclick=()=>listening?stopSpeech():startSpeech();
   $('speech').addEventListener('input',()=>{if(!listening)onSpeechChange();});
@@ -311,15 +465,35 @@
   $('cancelEdit').onclick=()=>{stopSpeech(true);clearEditor();feedback('수정이 취소되었습니다.');};
   document.querySelectorAll('[data-example]').forEach(b=>b.onclick=()=>{stopSpeech(true);$('speech').value=b.dataset.example;onSpeechChange();feedback('예시 문장을 넣었어요. 아래에서 저장해 보세요.');});
   $('saveButton').onclick=()=>{
-    if(listening){feedback('먼저 [말하기 종료]를 누른 뒤 저장해 주세요.',true);return;}
-    const title=$('titleInput').value.trim();if(!title){feedback('말하거나 업무 제목을 입력해 주세요.',true);$('speech').focus();return;}
-    const item={id:editingId||uid(),title:title.slice(0,150),category:$('categoryInput').value.trim().slice(0,30)||'일반 업무',due:$('dueInput').value||null,original:$('speech').value.slice(0,500),createdAt:new Date().toISOString(),done:false};
-    if(editingId){const old=tasks.find(t=>t.id===editingId);if(old){item.createdAt=old.createdAt;item.done=old.done;tasks=tasks.map(t=>t.id===editingId?item:t);}else tasks.unshift(item);}
-    else tasks.unshift(item);
+    const text=$('speech').value.trim();const chunks=splitSpeechItems(text);
+    const isEditing=!!editingId;
+    const plan=chunks.length>1&&!isEditing?chunks.map(parseCommand):[{title:$('titleInput').value.trim(),category:$('categoryInput').value.trim()||'일반 업무',due:$('dueInput').value||null}];
+    if(!plan.length||plan.some(p=>!p.title)){
+      feedback('말하거나 업무 제목을 입력해 주세요.',true);$('speech').focus();return;
+    }
+    if(chunks.length>1&&!isEditing&&plan.some(p=>p.hadDate&&!p.due)){
+      feedback('여러 일정 중 날짜를 인식하지 못한 항목이 있어요. 날짜를 나누어 입력해 주세요.',true);return;
+    }
+    const created=[];
+    for(const p of plan){
+      const item={id:isEditing?editingId:uid(),title:p.title.slice(0,150),category:String(p.category||'일반 업무').slice(0,30),due:p.due||null,original:chunks.length>1?text.slice(0,500):text.slice(0,500),createdAt:new Date().toISOString(),done:false};
+      if(isEditing){const old=tasks.find(t=>t.id===editingId);if(old){item.createdAt=old.createdAt;item.done=old.done;tasks=tasks.map(t=>t.id===editingId?item:t);}else tasks.unshift(item);}
+      else tasks.unshift(item);
+      created.push(item);
+    }
     const persisted=saveStored(KEY,tasks);
-    render();clearEditor();feedback(persisted?'✓ 업무를 이 기기에 저장했어요. 다시 접속해도 복원됩니다.':'업무가 현재 화면에 등록됐지만 브라우저 저장이 제한되어 있습니다.',!persisted);
+    const dated=created.filter(t=>t.due);
+    if(dated.length){const first=new Date(dated[0].due);calendarMonth=new Date(first.getFullYear(),first.getMonth(),1);selectedDay=new Date(first.getFullYear(),first.getMonth(),first.getDate());}
+    if(listening)resetAfterSavingDuringSpeech();else clearEditor();
+    render();
+    feedback(!persisted?'업무는 화면에 추가됐지만 브라우저 저장이 제한되어 있습니다.':dated.length?`✓ ${created.length}건 등록 · 달력에 ${dated.length}건 추가! 계속 말하거나 다음 업무를 입력하세요.`:`✓ ${created.length}건 등록 · 날짜가 없어 업무 목록에 저장됐어요. 날짜를 지정하면 달력에도 표시됩니다.`,!persisted);
   };
   for(const btn of ['All','Open','Done']) $('filter'+btn).onclick=()=>{filter=btn.toLowerCase();for(const k of ['All','Open','Done'])$('filter'+k).setAttribute('aria-pressed',String(k===btn));render();};
+  $('prevMonth').onclick=()=>{dateAtMonthOffset(-1);renderCalendar();};
+  $('nextMonth').onclick=()=>{dateAtMonthOffset(1);renderCalendar();};
+  $('goToday').onclick=()=>{calendarMonth=new Date();calendarMonth.setDate(1);selectedDay=new Date();renderCalendar();};
+  $('addOnDate').onclick=()=>{const date=ymd(selectedDay);if(editingId){editingId=null;$('saveButton').textContent='✓ 일정·업무 추가';$('cancelEdit').hidden=true;}$('dueInput').value=date+'T09:00';renderPreview();saveDraft();$('titleInput').focus();window.scrollTo({top:0,behavior:'smooth'});};
+  $('exportIcs').onclick=()=>{const rows=tasks.filter(t=>t.due);if(!rows.length){feedback('캘린더로 옮길 날짜 지정 업무가 없습니다.',true);return;}downloadText(makeIcs(rows),`닥터펫_원장일정_${ymd(new Date()).replaceAll('-','')}.ics`,'text/calendar;charset=utf-8');feedback(`${rows.length}건의 일정파일을 만들었습니다. 내려받은 .ics를 휴대폰 캘린더 앱에서 열어 등록하세요.`);};
   $('exportButton').onclick=()=>{
     const pack={app:'닥터펫 원장 개인비서',version:1,exportedAt:new Date().toISOString(),tasks:tasks.map(({id,title,category,due,original,createdAt,done})=>({id,title,category,due,original,createdAt,done}))};
     const blob=new Blob([JSON.stringify(pack,null,2)],{type:'application/json;charset=utf-8'});const url=URL.createObjectURL(blob);
